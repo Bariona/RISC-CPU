@@ -1,6 +1,8 @@
-# RISC-CPU
+# <img src="/static/cpu.png" width="40" align=center /> RISC-CPU
 
-[课程地址](https://github.com/ACMClassCourses/RISCV-CPU)
+- [课程地址](https://github.com/ACMClassCourses/RISCV-CPU)
 
-[Arch](doc/Arch.drawio)
+## Design
+
+![Arch][Arch.svg]
 
