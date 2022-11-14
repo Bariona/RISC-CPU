@@ -1,5 +1,7 @@
 riscv/testspace/*
 
+riscv/src/cpu.v.out
+
 *.o
 *.vcd
 
