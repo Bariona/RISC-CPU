@@ -25,6 +25,7 @@
 *  of the hw system as specified, and returns the specified data.
 ***************************************************************************************************/
 
+// HCI: host communication interface block
 // modification allowed for debugging purposes
 
 module hci
