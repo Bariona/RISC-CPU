@@ -13,15 +13,14 @@
   - components: index, valid_bit, value
 
 
-
-## Predictor
-
-
-
 1. reset = 1: clear the state
 
 2. ready = 0: postpone the action
 
 3. otherwise: run the process
 
-   ​
+
+## Predictor
+
+![predict](https://www.researchgate.net/publication/221219835/figure/fig3/AS:671528857399296@1537116364016/Two-bit-saturating-counter.png)
+

@@ -6,7 +6,7 @@
 
 ## Design
 
-![Arch][static/Arch.svg]
+![Arch](static/Arch.svg)
 
 ### 配置问题
 
@@ -44,15 +44,31 @@ Vivado待填坑...
 
 ## General
 
-- the size of mem is 128KB, which implies the `mem_a` only 17:0 is used.
+- the size of mem is 128KB, which implies the `mem_a` only 16:0 is used.
 - About Verilog
   - use non-blocking assignment for `reg` type in always @(posedge/negedge)
   - use assign statement for `wire` type
 
 ## Sketch
 
+- Von-Neumann Architecture:
+
+<img src="static/Von_Neumann_Arch.png" width=50% />
+
+Given part: 
+
+​	ram.v (memory), riscv_top.v , 
+
+​	hci.v (host communication interface block, **not** being activated while simulation ) 
+
+i.e. shown in pic above↑, except IO
+
+
+
 ### Instruction Fetch (IF)
 
 - InsFetcher: Fetch instruction
 
-  pc reg: program counter
+  ​	pc reg: program counter
+
+- Predictor: saturating counter
