@@ -14,9 +14,11 @@ module MemController(
   input  wire [`DATA_IDX_RANGE] data_addr,
   input  wire [`MEM_IDX_RANGE]  data_from_dc,
 
-  output wire [`ADDR_IDX] addr2mem,
-  output wire [`MEM_IDX_RANGE] mc_wr, // write_or_read (write: 1 read: 0)
-  output wire [`MEM_IDX_RANGE] data2mem
+  // port with ram
+  output wire  wr_mc2ram,     // write_or_read (write: 1 read: 0)
+  output wire [`ADDR_IDX] addr2ram,
+  input  wire [`ADDR_IDX] data_ram2mc,
+  output wire [`MEM_IDX_RANGE] data_mc2ram
 ); 
 
 assign addr2mem = is_from_IF ? pc[`ADDR_IDX] : data_addr[`ADDR_IDX];
