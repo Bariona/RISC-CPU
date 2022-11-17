@@ -45,9 +45,28 @@ Vivado待填坑...
 ## General
 
 - the size of mem is 128KB, which implies the `mem_a` only 16:0 is used.
+
 - About Verilog
   - use non-blocking assignment for `reg` type in always @(posedge/negedge)
   - use assign statement for `wire` type
+
+- **Communications between components:**
+
+  say A needs to send data to B: 
+
+  - A: valid, means A **already** have got the data!
+  - B: rdy(or enable), means B is ready to accept data (in case B is full, e.g. ROB, etc)
+  - then, rdy = 0, valid = 1, you need to **hold A's data until rdy = 1**, and then send it to B.
+
+  thx to the idea of *Chisel* in Scala (
+
+### VScode and `include
+
+use WSL, WSL, WSL!
+
+\`include 使用相对路径, (相对项目打开的root而言, 所以最好开始的时候文件夹就打开`riscv/src`)
+
+
 
 ## Sketch
 

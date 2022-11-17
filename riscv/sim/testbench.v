@@ -8,11 +8,11 @@ reg clk;
 reg rst;
 
 riscv_top #(.SIM(1)) top(
-    .EXCLK(clk),
-    .btnC(rst),
-    .Tx(),
-    .Rx(),
-    .led()
+  .EXCLK(clk),
+  .btnC(rst),
+  .Tx(),
+  .Rx(),
+  .led()
 );
 
 initial begin
@@ -26,9 +26,9 @@ initial begin
 end
 
 initial begin
-     $dumpfile("test.vcd");
-     $dumpvars(0, testbench);
-     #300000000 $finish;
+  $dumpfile("test.vcd");
+  $dumpvars(0, testbench);
+  #300000000 $finish;
 end
 
 endmodule

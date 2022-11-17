@@ -1,5 +1,8 @@
 // RISCV32I CPU top module
 // port modification allowed for debugging purposes
+`include "IF/Icache.v"
+`include "IF/InsFetcher.v"
+`include "IF/Predictor.v"
 
 module cpu(
   input  wire                 clk_in,			// system clock signal
@@ -28,20 +31,96 @@ module cpu(
 // - 0x30004 read: read clocks passed since cpu starts (in dword, 4 bytes)
 // - 0x30004 write: indicates program stop (will output '\0' through uart tx)
 
-always @(posedge clk_in)
-  begin
-    if (rst_in)
-      begin
-      
-      end
-    else if (!rdy_in)
-      begin
-      
-      end
-    else
-      begin
-      
-      end
-  end
+wire is_full = 1'b0;
+
+// mc & mem(ram)
+wire wr_mc2ram;
+wire [`ADDR_IDX] addr2ram;
+wire [`MEM_IDX_RANGE] data_from_ram;
+
+// icache & mc
+wire ena_mc_icache;
+wire [`ICACHE_BLOCK_RANGE] data_2icache;
+wire [`ADDR_IDX] addr_2mc;
+
+// fetcher & icache
+wire rd_ena_if_icache, instr_rdy_if_icache;
+wire [`DATA_IDX_RANGE] pc_if_icache, instr_if_icache;
+
+// fetcher & predictor
+wire [`DATA_IDX_RANGE] instr_2pred;
+wire [`DATA_IDX_RANGE] curpc_2pred, nexpc_2if;
+
+// fetcher & issue
+wire [`DATA_IDX_RANGE] instr_if_is;
+
+assign data_from_ram = mem_din;
+MemController mc (
+  .clk(clk_in),
+  .rst(rst_in),
+  .rdy(rdy_in),
+
+  .fet_ena(ena_mc_icache),
+  .addr(addr_2mc),
+  .data2icache(data_2icache),
+
+  // .wr_ena(),
+  // .wr_from_dcache(),
+  // .data_addr(),
+  // .data_from_dcache(),
+
+  .wr_mc2ram(mem_wr),
+  .addr2ram(mem_a),
+  .data_from_ram(data_from_ram)
+);
+
+Predictor predictor (
+  .clk(clk_in),
+  .rst(rst_in),
+  .rdy(rdy_in),
+
+  .instr_from_IC(instr_2pred),
+  .cur_pc(curpc_2pred),
+  .predict_pc(nexpc_2if)
+
+  // .rob_commit_pc_arrived(),
+  // .rob_commit_pc(),
+  // .hit_res()
+);
+
+ICACHE icache (
+  .clk(clk_in),
+  .rst(rst_in),
+  .rdy(rdy_in),
+
+  .rd_ena(rd_ena_if_icache),
+  .pc(pc_if_icache),
+
+  .instr_rdy(instr_rdy_if_icache),
+  .instr(instr_if_icache),
+
+  .mc_ena(ena_mc_icache),
+  .addr(addr_2mc),
+  .data_from_mc(data_2icache)
+);
+
+InsFetcher fetcher (
+  .clk(clk_in),
+  .rst(rst_in),
+  .rdy(rdy_in),
+
+  .rd_ena(rd_ena_if_icache),
+  .pc2icache(pc_if_icache),
+  .instr_rdy(instr_rdy_if_icache),
+  .instr_from_icache(instr_if_icache),
+
+  .instr_2pred(instr_2pred),
+  .cur_pc(curpc_2pred),
+  .next_pc(nexpc_2if),
+
+  .is_full(is_full),
+  .instr2is(instr_if_is)
+);
+
 
 endmodule

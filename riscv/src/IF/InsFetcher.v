@@ -1,60 +1,52 @@
-`include "riscv\src\const.v"
-
-module ICACHE (
-);
-// waited to be transfered...
-endmodule
+`include "const.v"
 
 module InsFetcher(
   input wire clk, 
-  input wire reset,
+  input wire rst,
   input wire rdy, 
 
   // from mem controller
-  input wire  instr_mc2if_arrived,
-  input wire  [`DATA_IDX_RANGE] instr_mc2if,
-  
-  // from predictor
-  output reg cur_pc,
-  input wire next_pc,
+  // input wire  instr_mc2if_arrived,
+  // input wire  [`DATA_IDX_RANGE] instr_mc2if,
 
-  output reg [`DATA_IDX_RANGE] instr_if2is
+  // signal to icahce
+  output wire rd_ena,
+  output wire [`DATA_IDX_RANGE] pc2icache,
+  input  wire instr_rdy,
+  input  wire [`DATA_IDX_RANGE] instr_from_icache,
+
+  // from predictor
+  output reg  [`DATA_IDX_RANGE] instr_2pred,
+  output reg  [`DATA_IDX_RANGE] cur_pc, // ? reg or wire
+  input wire  [`DATA_IDX_RANGE] next_pc,
+
+  // Issue part
+  input  wire is_full,
+  output wire [`DATA_IDX_RANGE] instr2is
 ); 
+
+// 后续会有predict失败的roll_back
 
 reg [`DATA_IDX_RANGE] pc;
 
-// ICACHE
-reg valid[`ICACHE_SIZE - 1 : 0];
-reg [`ICACHE_TAG_RANGE] icache_tag[`ICACHE_SIZE - 1 : 0];
-reg [`DATA_IDX_RANGE] icache_store[`ICACHE_SIZE - 1 : 0];
+assign rd_ena     = ~is_full;
+assign pc2icache  = pc;
 
-wire hit = valid[pc[`ICACHE_IDX_RANGE]] && icache_tag[pc[`ICACHE_IDX_RANGE]] == pc[`ICACHE_TAG_RANGE];
-// wire fetched_instr = (hit) ? icache_store[pc[`ICACHE_IDX_RANGE]] : instr_mc2if;
+assign instr2is   = (instr_rdy) ? instr_from_icache : 32'h0;
 
 always @(posedge clk) begin
-  if (reset) begin 
+  if (rst) begin 
     pc <= 0;
-    for (integer i = 0; i < `ICACHE_SIZE; i = i + 1) begin
-      valid[i]      <= 0;
-      icache_tag[i] <= 0;
-    end
   end 
-
-  else if (~rdy) begin
-    // pause 
+  else if (~rdy) begin // pause 
   end 
 
   else begin
-    if (~hit) begin   // update i$
-      valid[pc[`ICACHE_IDX_RANGE]]         <= 1;
-      icache_tag[pc[`ICACHE_IDX_RANGE]]    <= pc[`ICACHE_TAG_RANGE];
-      icache_store[pc[`ICACHE_IDX_RANGE]]  <= instr_mc2if;
-      instr_if2is                          <= instr_mc2if;
+    if (instr_rdy) begin
+      instr_2pred <= instr_from_icache;
     end
-    else begin 
-      instr_if2is                          <= icache_store[pc[`ICACHE_IDX_RANGE]];
-    end
-    pc <= next_pc;
+    cur_pc      <= pc;
+    pc          <= next_pc;
   end
 
 end

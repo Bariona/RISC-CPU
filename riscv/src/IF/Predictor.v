@@ -1,4 +1,4 @@
-`include "riscv\src\const.v"
+`include "const.v"
 
 `define MAP_IDX 11:0
 
@@ -8,7 +8,7 @@
 module Predictor
 (
   input wire clk,
-  input wire reset, 
+  input wire rst, 
   input wire rdy,
 
   // query whether to jump
@@ -32,9 +32,11 @@ wire brcImm   = {{20{instr_from_IC[31]}}, instr_from_IC[7], instr_from_IC[30:25]
 
 wire offset   = (instr_from_IC[`OPCODE_RANGE] == `JAL_TYPE) ? jalImm : brcImm;
 
+integer i;
+
 always @(posedge clk) begin
-  if (reset) begin      // reset
-    for (integer i = 0; i < `PREDICTOR_SIZE; i = i + 1) 
+  if (rst) begin      // reset
+    for (i = 0; i < `PREDICTOR_SIZE; i = i + 1) 
       state[i] <= 0;
   end
   else if (~rdy) begin  // pause 
@@ -42,7 +44,7 @@ always @(posedge clk) begin
 
   else begin
     predict_pc <= (if_jump) ? cur_pc + offset : cur_pc + 4;
-    
+
     if (rob_commit_pc_arrived) begin
       if (~hit_res) begin
         state[rob_commit_pc[`MAP_IDX]] <= state[rob_commit_pc[`MAP_IDX]] + (state[rob_commit_pc[`MAP_IDX]][1]) ? -1 : 1;
