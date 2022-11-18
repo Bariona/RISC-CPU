@@ -78,7 +78,7 @@ reg [ADDR_WIDTH-1:0] q_addr_a;
 always @(posedge clk)
   begin
     if (we)
-        ram[addr_a] <= din_a;
+      ram[addr_a] <= din_a;
     q_addr_a <= addr_a;
   end
 
@@ -90,7 +90,7 @@ initial begin
   for (i=0;i<2**ADDR_WIDTH;i=i+1) begin
     ram[i] = 0;
   end
-  $readmemh("test.data", ram); // add test.data to vivado project or specify a valid file path
+  $readmemh("/mnt/c/Users/huawei/Desktop/RISC-CPU/riscv/testspace/test.data", ram); // add test.data to vivado project or specify a valid file path
 end
 
 endmodule

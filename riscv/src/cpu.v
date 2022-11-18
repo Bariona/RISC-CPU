@@ -31,16 +31,13 @@ module cpu(
 // - 0x30004 read: read clocks passed since cpu starts (in dword, 4 bytes)
 // - 0x30004 write: indicates program stop (will output '\0' through uart tx)
 
-wire is_full = 1'b0;
-
 // mc & mem(ram)
-wire wr_mc2ram;
-wire [`ADDR_IDX] addr2ram;
-wire [`MEM_IDX_RANGE] data_from_ram;
+wire wr_mc2ram, ram_ena;
+wire [`ADDR_IDX] addr_2ram;
 
 // icache & mc
-wire ena_mc_icache;
-wire [`ICACHE_BLOCK_RANGE] data_2icache;
+wire ena_mc_icache, valid_mc2icache;
+wire [`DATA_IDX_RANGE] data_mc2icache;
 wire [`ADDR_IDX] addr_2mc;
 
 // fetcher & icache
@@ -48,30 +45,36 @@ wire rd_ena_if_icache, instr_rdy_if_icache;
 wire [`DATA_IDX_RANGE] pc_if_icache, instr_if_icache;
 
 // fetcher & predictor
+wire valid_if_pred;
 wire [`DATA_IDX_RANGE] instr_2pred;
 wire [`DATA_IDX_RANGE] curpc_2pred, nexpc_2if;
 
 // fetcher & issue
+wire valid_if_is, is_full;
 wire [`DATA_IDX_RANGE] instr_if_is;
 
-assign data_from_ram = mem_din;
+assign is_full       = 1'b0;
+
 MemController mc (
   .clk(clk_in),
   .rst(rst_in),
   .rdy(rdy_in),
 
   .fet_ena(ena_mc_icache),
-  .addr(addr_2mc),
-  .data2icache(data_2icache),
+  .instr_addr(addr_2mc),
+  .valid_2icache(valid_mc2icache),
+  .data_2icache(data_mc2icache),
 
   // .wr_ena(),
   // .wr_from_dcache(),
   // .data_addr(),
   // .data_from_dcache(),
 
+  .ram_ena(ram_ena),   // 空引脚?
   .wr_mc2ram(mem_wr),
-  .addr2ram(mem_a),
-  .data_from_ram(data_from_ram)
+  .addr_2ram(mem_a),
+  .data_2ram(mem_dout),
+  .data_from_ram(mem_din)
 );
 
 Predictor predictor (
@@ -79,6 +82,7 @@ Predictor predictor (
   .rst(rst_in),
   .rdy(rdy_in),
 
+  .instr_valid(valid_if_pred),
   .instr_from_IC(instr_2pred),
   .cur_pc(curpc_2pred),
   .predict_pc(nexpc_2if)
@@ -93,15 +97,15 @@ ICACHE icache (
   .rst(rst_in),
   .rdy(rdy_in),
 
-  .rd_ena(rd_ena_if_icache),
+  .rdy_from_fet(rd_ena_if_icache),
   .pc(pc_if_icache),
-
-  .instr_rdy(instr_rdy_if_icache),
+  .instr_valid(instr_rdy_if_icache),
   .instr(instr_if_icache),
 
   .mc_ena(ena_mc_icache),
   .addr(addr_2mc),
-  .data_from_mc(data_2icache)
+  .valid_from_mc(valid_mc2icache),
+  .data_from_mc(data_mc2icache)
 );
 
 InsFetcher fetcher (
@@ -109,17 +113,19 @@ InsFetcher fetcher (
   .rst(rst_in),
   .rdy(rdy_in),
 
-  .rd_ena(rd_ena_if_icache),
-  .pc2icache(pc_if_icache),
-  .instr_rdy(instr_rdy_if_icache),
+  .rdy_2icache(rd_ena_if_icache),
+  .pc_2icache(pc_if_icache),
+  .instr_valid(instr_rdy_if_icache),
   .instr_from_icache(instr_if_icache),
 
+  .valid_2pred(valid_if_pred),
   .instr_2pred(instr_2pred),
   .cur_pc(curpc_2pred),
   .next_pc(nexpc_2if),
 
   .is_full(is_full),
-  .instr2is(instr_if_is)
+  .valid_2is(valid_if_is),
+  .instr_2is(instr_if_is)
 );
 
 

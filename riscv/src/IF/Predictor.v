@@ -11,7 +11,8 @@ module Predictor
   input wire rst, 
   input wire rdy,
 
-  // query whether to jump
+  // port with fetcher
+  input wire instr_valid,
   input wire [`DATA_IDX_RANGE] instr_from_IC,
   input wire [`DATA_IDX_RANGE] cur_pc,
   output reg [`DATA_IDX_RANGE] predict_pc,
@@ -43,7 +44,12 @@ always @(posedge clk) begin
   end
 
   else begin
-    predict_pc <= (if_jump) ? cur_pc + offset : cur_pc + 4;
+    if (instr_valid) begin 
+      predict_pc <= (if_jump) ? cur_pc + offset : cur_pc + 4;
+    end
+    else begin
+      predict_pc <= cur_pc;  // ???
+    end
 
     if (rob_commit_pc_arrived) begin
       if (~hit_res) begin
