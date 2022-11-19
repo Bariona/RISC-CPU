@@ -35,4 +35,6 @@ clear:
 
 test_sim: build_sim build_sim_test run_sim
 
+test: build_sim run_sim
+
 .PHONY: _no_testcase_name_check build_sim build_sim_test run_sim clear test_sim

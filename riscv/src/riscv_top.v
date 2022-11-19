@@ -13,6 +13,10 @@ module riscv_top
 	output wire			led
 );
 
+initial begin
+	$display("SIM =", SIM);
+end
+
 localparam SYS_CLK_FREQ 	= 100000000;
 localparam UART_BAUD_RATE = 115200;
 localparam RAM_ADDR_WIDTH = 17; 				// 128KiB ram, should not be modified

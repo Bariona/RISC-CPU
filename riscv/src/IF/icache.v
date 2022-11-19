@@ -2,6 +2,8 @@
 
 `define VALID                  1'b1
 `define STALL                  1'b0
+
+`define INS_CNT                32'h4
 `define INS_00                 31:0
 `define INS_01                 63:32
 `define INS_10                 95:64
@@ -19,7 +21,7 @@ module ICACHE (
   output wire [`DATA_IDX_RANGE] instr,
 
   // port with mem_controller
-  output wire mc_ena,
+  output reg  mc_ena,
   output reg  [`ADDR_IDX] addr,
   input  wire valid_from_mc,
   input  wire [`DATA_IDX_RANGE] data_from_mc
@@ -30,10 +32,10 @@ reg status;
 reg [`DATA_IDX_RANGE] counter;
 
 reg valid[`ICACHE_ENTRY - 1 : 0];
-reg [`ICACHE_TAG_RANGE]   icache_tag[`ICACHE_ENTRY - 1 : 0];
+reg [`ICACHE_TAG_RANGE]   icache_tag  [`ICACHE_ENTRY - 1 : 0];
 reg [`ICACHE_BLOCK_RANGE] icache_store[`ICACHE_ENTRY - 1 : 0];
 
-wire      idx       = pc[`ICACHE_IDX_RANGE];
+wire[`ICACHE_IDX_RANGE] idx = pc[`ICACHE_IDX_RANGE];
 wire      hit       = (rdy_from_fet) ? (valid[idx] && icache_tag[idx] == pc[`ICACHE_TAG_RANGE]) : `TRUE;
 
 wire[1:0] addr_ins  = pc[`INSTR_RANGE];
@@ -41,13 +43,15 @@ assign    instr     = (addr_ins[1]) ? (addr_ins[0] ? icache_store[idx][`INS_11] 
                                   (addr_ins[0] ? icache_store[idx][`INS_01] : icache_store[idx][`INS_00]);
 
 assign instr_valid  =  hit;
-assign mc_ena       = ~hit;
+// assign mc_ena       = ~hit;
 
 integer i;
 always @(posedge clk) begin
   if (rst) begin      // clear
-    status  <= `VALID;
-    counter <= `ZERO;
+    status        <= `VALID;
+    counter       <= `ZERO;
+    addr          <= `ZERO;
+    mc_ena        <= `FALSE;
     for (i = 0; i < `ICACHE_ENTRY; i = i + 1) begin
       valid[i]        <= 0;
       icache_tag[i]   <= 0;
@@ -58,12 +62,19 @@ always @(posedge clk) begin
   end
 
   else begin
-    if (~hit && status == `VALID) begin         // fill the block(i.e. entry)
+    if (hit) begin
+      status      <= `VALID;
+      mc_ena      <= `FALSE;
+    end
+    else if (status == `VALID) begin         // fill the block(i.e. entry)
       status          <= `STALL;
-      counter         <= `ZERO;
+      mc_ena          <= `TRUE;
+      counter         <= `ONE;                // not zero???
+      
+      icache_tag[idx] <= pc[`ICACHE_TAG_RANGE];
       addr            <= {pc[16:4], 4'b0000}; // ??? hardcoding, waited to be removed
     end
-    else if (~hit) begin
+    else begin
       // $display("counter", counter);
       if (valid_from_mc) begin 
         case (counter)
@@ -74,17 +85,19 @@ always @(posedge clk) begin
         endcase
 
         // valid[idx]        <= 1;
-        if (counter < 32'h04) begin
-          counter     <= counter + `ONE;
-          addr        <= addr    + 32'h4;    // next instruction
+        if (counter <= `INS_CNT - 1) begin
+          counter       <= counter + `ONE;
+          addr          <= addr    +    4;    // next instruction
         end
         else begin
-          status      <= `VALID;
-          counter     <= `ZERO;
+          status        <= `VALID;
+          counter       <= `ZERO;
+          valid[idx]    <= `TRUE;
+          mc_ena        <= `FALSE;
         end
       end
-
     end
+
   end
 
 end

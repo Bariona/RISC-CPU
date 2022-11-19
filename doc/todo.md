@@ -11,3 +11,4 @@
 - [x] cache独立出来, cache line expasion...
 - [ ] mem被icache读和dcache读/写抢占 
 - [ ] 去掉硬编码 & 丑丑的绝对地址
+- [ ] 切记切记, 切换status的时候把ena之类的reg全都要赋值到位, 避免出现**garbage status** !!

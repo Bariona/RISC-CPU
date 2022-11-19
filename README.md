@@ -44,6 +44,8 @@ Vivado待填坑...
 
 ## General
 
+- Regard CPU as **finite-state machine**, remember that verilog is HDL language!
+
 - the size of mem is 128KB, which implies the `mem_a` only 16:0 is used.
 
 - About Verilog

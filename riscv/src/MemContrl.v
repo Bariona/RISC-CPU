@@ -1,10 +1,11 @@
 `include "const.v"
-`timescale 1ps/1ps
+// `timescale 1ps/1ps
 
-`define STALL 2'b00
-`define FETCH 2'b01
-`define LOAD  2'b01
-`define STROE 2'b11
+`define NORM  3'b111
+`define STALL 3'b000
+`define FETCH 3'b001
+`define LOAD  3'b010
+`define STROE 3'b011
 
 module MemController(
   input  wire clk,
@@ -25,30 +26,28 @@ module MemController(
   output reg  valid_2dcache,
 
   // port with ram
-  output wire ram_ena,
+  output reg ram_ena,
   output wire wr_mc2ram,         // write_or_read (write: 1 read: 0)
-  output reg  [`ADDR_IDX] addr_2ram,
-  output wire [`MEM_IDX_RANGE] data_2ram,
-  input  wire [`MEM_IDX_RANGE] data_from_ram
+  output reg  [`DATA_IDX_RANGE] addr_2ram,
+  output wire [`MEM_IDX_RANGE]  data_2ram,
+  input  wire [`MEM_IDX_RANGE]  data_from_ram
 ); 
 
-reg [1:0] status;
-reg [`ADDR_IDX] pc_2ram;
+reg [2:0] status;
 reg [`DATA_IDX_RANGE] counter;
 
-assign ram_ena    = fet_ena | wr_ena;
+// assign ram_ena    = fet_ena | wr_ena;
 assign wr_mc2ram  = fet_ena ? 1'b0 : wr_from_dcache;
 assign data_2mem  = data_from_dcache; // ? 是否需要加condition
 
-initial begin
-  $display("status is %d at %t", valid_2icache, $realtime);
-  # 40; $display("status is %d at %t", valid_2icache, $time);
-end
+// initial begin
+//   $display("status is %d at %t", valid_2icache, $realtime);
+//   # 40; $display("status is %d at %t", valid_2icache, $time);
+// end
 
 always @(posedge clk) begin
   if (rst) begin
-    status  <= `STALL;
-    pc_2ram <= `ZERO;
+    status  <= `NORM;
     counter <= `ZERO;
 
     valid_2icache <= `FALSE;
@@ -58,16 +57,26 @@ always @(posedge clk) begin
   end
 
   else begin
-    if (status == `STALL) begin 
+    if (status == `NORM) begin 
       if (fet_ena) begin
         status        <= `FETCH;
-        valid_2icache <= `TRUE;
-        pc_2ram       <= instr_addr; 
+        valid_2icache <= `FALSE;
+        ram_ena       <= `TRUE;
+        counter       <= `ZERO;
+        addr_2ram     <= instr_addr; 
       end
       else if (wr_ena) begin
         status        <= (wr_from_dcache) ? `STROE : `LOAD;
-        valid_2dcache <= `TRUE;
+        valid_2dcache <= `FALSE;
       end
+      else begin
+        valid_2icache <= `FALSE;
+        valid_2dcache <= `FALSE;
+        ram_ena       <= `FALSE;
+        counter       <= `ZERO;
+        addr_2ram     <= `ZERO;
+      end
+
       //status  <= (fet_ena) ? `FETCH : (wr_ena ? (wr_from_dcache ? `STROE : `LOAD) : `STALL);
     end
     else if (status == `FETCH) begin
@@ -78,20 +87,24 @@ always @(posedge clk) begin
         32'h4 : data_2icache[31:24] <= data_from_ram;
       endcase
       
-      addr_2ram <= pc_2ram;
-      pc_2ram   <= pc_2ram + 32'h1;
-      if (counter >= 32'h4) begin
-        counter <= `ZERO;
-        status  <= `STALL;
+      addr_2ram   <= addr_2ram + `ONE; // +1是因为下一个周期才能拿到数据
+      if (counter <= `INSTR_PER_BYTE - 1) begin
+        counter   <= counter + `ONE;
       end
       else begin
-        counter <= counter + `ONE;
-
+        status        <= `STALL;
+        counter       <= `ZERO;
+        valid_2icache <= `TRUE;
       end
     end
     else if (status == `STROE) begin
     end
-    else if (status == `STALL) begin
+    else if (status == `LOAD) begin
+    end
+    else begin // STALL
+      status        <= `NORM;
+      valid_2icache <= `FALSE;
+      valid_2dcache <= `FALSE;
     end
 
   end

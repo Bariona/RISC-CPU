@@ -47,12 +47,13 @@ always @(posedge clk) begin
   end 
 
   else begin
-    if (instr_valid) begin // ??? until get a instr
-      instr_2pred <= instr_from_icache;
-      cur_pc      <= pc;
-      pc          <= next_pc;
+    if (rdy_2icache) begin
+      if (instr_valid) begin // ??? until get a instr
+        instr_2pred <= instr_from_icache;
+        cur_pc      <= pc;
+        pc          <= pc + 4;
+      end
     end
-    
   end
 
 end

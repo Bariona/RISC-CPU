@@ -40,6 +40,9 @@ wire ena_mc_icache, valid_mc2icache;
 wire [`DATA_IDX_RANGE] data_mc2icache;
 wire [`ADDR_IDX] addr_2mc;
 
+// dcache & mc
+wire wr_ena;
+
 // fetcher & icache
 wire rd_ena_if_icache, instr_rdy_if_icache;
 wire [`DATA_IDX_RANGE] pc_if_icache, instr_if_icache;
@@ -53,9 +56,10 @@ wire [`DATA_IDX_RANGE] curpc_2pred, nexpc_2if;
 wire valid_if_is, is_full;
 wire [`DATA_IDX_RANGE] instr_if_is;
 
-assign is_full       = 1'b0;
+assign is_full       = `FALSE;
+assign wr_ena        = `ZERO;
 
-MemController mc (
+MemController MC (
   .clk(clk_in),
   .rst(rst_in),
   .rdy(rdy_in),
@@ -65,7 +69,7 @@ MemController mc (
   .valid_2icache(valid_mc2icache),
   .data_2icache(data_mc2icache),
 
-  // .wr_ena(),
+  .wr_ena(wr_ena),
   // .wr_from_dcache(),
   // .data_addr(),
   // .data_from_dcache(),
