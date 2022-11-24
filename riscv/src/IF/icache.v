@@ -3,7 +3,7 @@
 `define VALID                  1'b1
 `define STALL                  1'b0
 
-`define INS_CNT                32'h4
+`define BLOCK_INS_CNT                32'h4
 `define INS_00                 31:0
 `define INS_01                 63:32
 `define INS_10                 95:64
@@ -75,7 +75,6 @@ always @(posedge clk) begin
       addr            <= {pc[16:4], 4'b0000}; // ??? hardcoding, waited to be removed
     end
     else begin
-      // $display("counter", counter);
       if (valid_from_mc) begin 
         case (counter)
           32'h1 : icache_store[idx][`INS_00] <= data_from_mc;
@@ -84,8 +83,7 @@ always @(posedge clk) begin
           32'h4 : icache_store[idx][`INS_11] <= data_from_mc;
         endcase
 
-        // valid[idx]        <= 1;
-        if (counter <= `INS_CNT - 1) begin
+        if (counter <= `BLOCK_INS_CNT - 1) begin
           counter       <= counter + `ONE;
           addr          <= addr    +    4;    // next instruction
         end

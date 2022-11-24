@@ -15,7 +15,7 @@ module Predictor
   input wire instr_valid,
   input wire [`DATA_IDX_RANGE] instr_from_IC,
   input wire [`DATA_IDX_RANGE] cur_pc,
-  output reg [`DATA_IDX_RANGE] predict_pc,
+  output wire [`DATA_IDX_RANGE] predict_pc,
 
   // update info
   input wire rob_commit_pc_arrived,
@@ -26,12 +26,14 @@ module Predictor
 reg [1:0] state[`PREDICTOR_SIZE - 1 : 0];
 
 wire if_jump  = (instr_from_IC[`OPCODE_RANGE] == `JAL_TYPE) ? `TRUE : 
-                      ((instr_from_IC[`OPCODE_RANGE] == `BRANCH_TYPE) ? state[instr_from_IC[`MAP_IDX]][1]: `FALSE);
+                      ((instr_from_IC[`OPCODE_RANGE] == `B_TYPE) ? state[instr_from_IC[`MAP_IDX]][1]: `FALSE);
 
 wire jalImm   = {{12{instr_from_IC[31]}}, instr_from_IC[19:12], instr_from_IC[20], instr_from_IC[30:21], 1'b0};
 wire brcImm   = {{20{instr_from_IC[31]}}, instr_from_IC[7], instr_from_IC[30:25], instr_from_IC[11:8], 1'b0};  
 
 wire offset   = (instr_from_IC[`OPCODE_RANGE] == `JAL_TYPE) ? jalImm : brcImm;
+
+assign predict_pc = (if_jump) ? cur_pc + offset : cur_pc + 4;
 
 integer i;
 
@@ -44,13 +46,6 @@ always @(posedge clk) begin
   end
 
   else begin
-    if (instr_valid) begin 
-      predict_pc <= (if_jump) ? cur_pc + offset : cur_pc + 4;
-    end
-    else begin
-      predict_pc <= cur_pc;  // ???
-    end
-
     if (rob_commit_pc_arrived) begin
       if (~hit_res) begin
         state[rob_commit_pc[`MAP_IDX]] <= state[rob_commit_pc[`MAP_IDX]] + (state[rob_commit_pc[`MAP_IDX]][1]) ? -1 : 1;

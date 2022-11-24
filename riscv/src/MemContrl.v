@@ -49,7 +49,7 @@ always @(posedge clk) begin
   if (rst) begin
     status  <= `NORM;
     counter <= `ZERO;
-
+    ram_ena <= `FALSE;
     valid_2icache <= `FALSE;
     valid_2dcache <= `FALSE;
   end
@@ -58,7 +58,7 @@ always @(posedge clk) begin
 
   else begin
     if (status == `NORM) begin 
-      if (fet_ena) begin
+      if (fet_ena) begin        // ??? 优先做dcache
         status        <= `FETCH;
         valid_2icache <= `FALSE;
         ram_ena       <= `TRUE;
@@ -81,6 +81,7 @@ always @(posedge clk) begin
     end
     else if (status == `FETCH) begin
       case (counter)
+        // 花费一个cycle得到mem
         32'h1 : data_2icache[7:0]   <= data_from_ram;
         32'h2 : data_2icache[15:8]  <= data_from_ram;
         32'h3 : data_2icache[23:16] <= data_from_ram;
@@ -92,7 +93,7 @@ always @(posedge clk) begin
         counter   <= counter + `ONE;
       end
       else begin
-        status        <= `STALL;
+        status        <= `STALL; // update to icache costs 1 cycle
         counter       <= `ZERO;
         valid_2icache <= `TRUE;
       end
