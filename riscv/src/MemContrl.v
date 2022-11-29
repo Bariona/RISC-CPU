@@ -7,7 +7,7 @@
 `define LOAD  3'b010
 `define STROE 3'b011
 
-module MemController(
+module MemController (
   input  wire clk,
   input  wire rst,
   input  wire rdy,

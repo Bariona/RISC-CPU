@@ -20,6 +20,7 @@ module InsFetcher(
   // Issue part
   input  wire is_full,
   output wire valid_2is,
+  output wire [`DATA_IDX_RANGE] pc_2is,
   output wire [`DATA_IDX_RANGE] instr_2is
 ); 
 
@@ -31,6 +32,7 @@ assign rdy_2icache = ~is_full;
 
 assign valid_2is   = instr_valid;
 assign instr_2is   = instr_from_icache;
+assign pc_2is      = pc;
 
 // to predictor
 assign valid_2pred = (instr_valid) ? `TRUE : `FALSE;
@@ -49,7 +51,11 @@ always @(posedge clk) begin
 
     if (rdy_2icache) begin   // able to fetch another instruction
       pc_2icache <= pc;
+    end 
+    else begin
+      pc <= `ZERO;
     end
+
   end
 
 end

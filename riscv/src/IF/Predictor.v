@@ -5,8 +5,7 @@
 `define PREDICTOR_SIZE 12'hFFF
 
 // Two-way branch predictor
-module Predictor
-(
+module Predictor (
   input wire clk,
   input wire rst, 
   input wire rdy,

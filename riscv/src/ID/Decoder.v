@@ -1,7 +1,6 @@
 `include "const.v"
 
-module Decoder 
-(
+module Decoder (
   input wire [`DATA_IDX_RANGE] instr,
 
   output reg is_ls,
@@ -78,8 +77,14 @@ always @(*) begin
         3'b100: optype = `OPTYPE_XORI;
         3'b110: optype = `OPTYPE_ORI;
         3'b111: optype = `OPTYPE_ANDI;
-        3'b001: optype = `OPTYPE_SLLI;
-        3'b101: optype = instr[30] ? `OPTYPE_SRAI : `OPTYPE_SRLI;
+        3'b001: begin
+          optype = `OPTYPE_SLLI;
+          imm    = instr[24:20];
+        end
+        3'b101: begin
+          optype = instr[30] ? `OPTYPE_SRAI : `OPTYPE_SRLI;
+          imm    = instr[24:20];
+        end
       endcase
     end
 

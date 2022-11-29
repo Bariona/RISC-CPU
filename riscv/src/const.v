@@ -56,6 +56,7 @@
 `define OPTYPE_BLTU    6'd9 
 `define OPTYPE_BGEU    6'd10 
 
+// === load/store ===
 `define OPTYPE_LB      6'd11 
 `define OPTYPE_LH      6'd12 
 `define OPTYPE_LW      6'd13 
@@ -65,6 +66,7 @@
 `define OPTYPE_SB      6'd16 
 `define OPTYPE_SH      6'd17 
 `define OPTYPE_SW      6'd18 
+// =============
 
 `define OPTYPE_ADD     6'd19 
 `define OPTYPE_SUB     6'd20 
