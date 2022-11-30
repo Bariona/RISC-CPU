@@ -7,12 +7,16 @@ module ALU (
   input wire [`DATA_IDX_RANGE] rs2,
   input wire [`DATA_IDX_RANGE] imm,
 
+  output reg has_result,
   output reg [`DATA_IDX_RANGE] result, 
   output reg [`DATA_IDX_RANGE] target_pc,
   output reg if_jump
 );
 
 always @(*) begin
+  
+  has_result = (optype != `NOP);
+  
   case (optype)
     `OPTYPE_LUI:   result = imm;
     `OPTYPE_AUIPC: result = pc + imm;

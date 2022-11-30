@@ -4,6 +4,8 @@
 `define ZERO             32'b0
 `define REG_ZERO          5'h00
 `define ONE              32'b1
+`define LOAD_MEM          1'b0
+`define WRITE_MEM         1'b1
 
 // i$ relevant
 `define ICACHE_ENTRY            256
@@ -19,15 +21,21 @@
 `define MEM_IDX_RANGE      7:0
 
 // ROB
+`define ROB_SIZE           32
 `define ROB_ID_RANGE       4:0
+`define RENAMED_ZERO      5'h00 // means don't have to be renamed
 
 // constant for size
 `define ADDR_WIDTH          17
+`define ADDR_RANGE        16:0
+
+// regsiterFile 
+`define REG_SIZE            32
+`define REG_RANGE          4:0
 
 // Instruction relevant
 `define OPCODE_TYPE        6:0
 `define OPCODE_RANGE       6:0
-`define REG_RANGE          4:0
 `define FUNCT3_RANGE      14:12
 `define RD_IDX            11:7
 `define RS1_IDX           19:15
@@ -43,6 +51,7 @@
 `define S_TYPE          7'b0100011
 `define A_TYPE          7'b0010011
 
+`define NOP            6'd0
 `define OPTYPE_LUI     6'd1
 `define OPTYPE_AUIPC   6'd2
 

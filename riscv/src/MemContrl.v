@@ -18,27 +18,27 @@ module MemController (
   output reg  valid_2icache,
   output reg  [`DATA_IDX_RANGE] data_2icache,
 
-  // signal from dcache
+  // signal from LSB
   input  wire wr_ena,
-  input  wire wr_from_dcache,
+  input  wire wr_from_lsb,
   input  wire [`DATA_IDX_RANGE] data_addr,
-  input  wire [`MEM_IDX_RANGE]  data_from_dcache,
-  output reg  valid_2dcache,
+  input  wire [`MEM_IDX_RANGE]  data_from_lsb,
+  output reg  valid_2lsb,
+  output reg  [`MEM_IDX_RANGE] data_2lsb,
 
   // port with ram
-  output reg ram_ena,
-  output wire wr_mc2ram,         // write_or_read (write: 1 read: 0)
+  output reg  ram_ena,
+  output wire wr_mc2ram,              // write_or_read (write: 1 read: 0)
   output reg  [`DATA_IDX_RANGE] addr_2ram,
-  output wire [`MEM_IDX_RANGE]  data_2ram,
+  output reg  [`MEM_IDX_RANGE]  data_2ram,
   input  wire [`MEM_IDX_RANGE]  data_from_ram
 ); 
 
 reg [2:0] status;
 reg [`DATA_IDX_RANGE] counter;
 
-// assign ram_ena    = fet_ena | wr_ena;
-assign wr_mc2ram  = fet_ena ? 1'b0 : wr_from_dcache;
-assign data_2mem  = data_from_dcache; // ? 是否需要加condition
+assign wr_mc2ram  = wr_ena ? wr_from_lsb : (fet_ena ? `LOAD_MEM : `FALSE);
+assign data_2mem  = data_from_lsb; // ? 是否需要加condition
 
 // initial begin
 //   $display("status is %d at %t", valid_2icache, $realtime);
@@ -51,34 +51,38 @@ always @(posedge clk) begin
     counter <= `ZERO;
     ram_ena <= `FALSE;
     valid_2icache <= `FALSE;
-    valid_2dcache <= `FALSE;
+    valid_2lsb <= `FALSE;
   end
   else if (~rdy) begin //pause
   end
 
   else begin
     if (status == `NORM) begin 
-      if (fet_ena) begin        // ??? 优先做dcache
+      if (wr_ena) begin
+        ram_ena       <= `TRUE;
+        status        <= (wr_from_lsb) ? `STROE : `LOAD;
+        valid_2lsb    <= `FALSE;
+        addr_2ram     <= data_addr;
+        data_2ram     <= data_from_lsb;
+      end
+      else if (fet_ena) begin
+        ram_ena       <= `TRUE;
         status        <= `FETCH;
         valid_2icache <= `FALSE;
         ram_ena       <= `TRUE;
         counter       <= `ZERO;
         addr_2ram     <= instr_addr; 
       end
-      else if (wr_ena) begin
-        status        <= (wr_from_dcache) ? `STROE : `LOAD;
-        valid_2dcache <= `FALSE;
-      end
+      
       else begin
         valid_2icache <= `FALSE;
-        valid_2dcache <= `FALSE;
+        valid_2lsb    <= `FALSE;
         ram_ena       <= `FALSE;
         counter       <= `ZERO;
         addr_2ram     <= `ZERO;
       end
-
-      //status  <= (fet_ena) ? `FETCH : (wr_ena ? (wr_from_dcache ? `STROE : `LOAD) : `STALL);
     end
+
     else if (status == `FETCH) begin
       case (counter)
         // 花费一个cycle得到mem
@@ -96,16 +100,23 @@ always @(posedge clk) begin
         status        <= `STALL; // update to icache costs 1 cycle
         counter       <= `ZERO;
         valid_2icache <= `TRUE;
+        ram_ena       <= `FALSE;
       end
     end
     else if (status == `STROE) begin
+      status        <= `NORM;
+      ram_ena       <= `FALSE;
     end
     else if (status == `LOAD) begin
+      valid_2lsb    <= `TRUE;
+      data_2lsb     <= data_from_ram;
+      status        <= `NORM; /// ??? 这里可以加速, 多读一个unit
+      ram_ena       <= `FALSE;
     end
     else begin // STALL
       status        <= `NORM;
       valid_2icache <= `FALSE;
-      valid_2dcache <= `FALSE;
+      valid_2lsb    <= `FALSE;
     end
 
   end

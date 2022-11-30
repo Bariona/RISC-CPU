@@ -36,7 +36,7 @@ reg [`ICACHE_TAG_RANGE]   icache_tag  [`ICACHE_ENTRY - 1 : 0];
 reg [`ICACHE_BLOCK_RANGE] icache_store[`ICACHE_ENTRY - 1 : 0];
 
 wire[`ICACHE_IDX_RANGE] idx = pc[`ICACHE_IDX_RANGE];
-wire      hit       = (rdy_from_fet) ? (valid[idx] && icache_tag[idx] == pc[`ICACHE_TAG_RANGE]) : `TRUE;
+wire      hit       = (rdy_from_fet) ? (valid[idx] && icache_tag[idx] == pc[`ICACHE_TAG_RANGE]) : `FALSE;
 
 wire[1:0] addr_ins  = pc[`INSTR_RANGE];
 assign    instr     = (addr_ins[1]) ? (addr_ins[0] ? icache_store[idx][`INS_11] : icache_store[idx][`INS_10]) : 
