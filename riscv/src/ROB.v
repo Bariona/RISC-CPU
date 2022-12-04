@@ -19,7 +19,7 @@ module ROB (
   input  wire [`DATA_IDX_RANGE] pc_from_dsp,
   input  wire [`REG_RANGE] instr_rd_from_dsp,
   input  wire is_jump_from_dsp,
-  input  wire jmpRecord_from_dsp,
+  input  wire jumpRecord_from_dsp,
   input  wire [`OPCODE_TYPE] optype_from_dsp,
 
   output wire [`ROB_ID_RANGE] renameid_2dsp,
@@ -152,7 +152,7 @@ always @(posedge clk) begin
       target_reg[tail]  <= instr_rd_from_dsp;
       optype[tail]      <= optype_from_dsp;
       is_jump[tail]     <= is_jump_from_dsp;
-      jumpRecord        <= jmpRecord_from_dsp;
+      jumpRecord        <= jumpRecord_from_dsp;
     end
 
   end

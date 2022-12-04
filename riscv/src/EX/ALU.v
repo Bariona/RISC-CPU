@@ -2,12 +2,14 @@
 
 module ALU (
   input wire [`OPCODE_TYPE] optype,
+  input wire [`ROB_ID_RANGE] rd_alias_from_rs,
   input wire [`DATA_IDX_RANGE] pc,
   input wire [`DATA_IDX_RANGE] rs1,
   input wire [`DATA_IDX_RANGE] rs2,
   input wire [`DATA_IDX_RANGE] imm,
-
+  
   output reg has_result,
+  output reg [`ROB_ID_RANGE] rd_alias,
   output reg [`DATA_IDX_RANGE] result, 
   output reg [`DATA_IDX_RANGE] target_pc,
   output reg if_jump
@@ -15,7 +17,8 @@ module ALU (
 
 always @(*) begin
   
-  has_result = (optype != `NOP);
+  has_result  = (optype != `NOP);
+  rd_alias    = rd_alias_from_rs;
   
   case (optype)
     `OPTYPE_LUI:   result = imm;

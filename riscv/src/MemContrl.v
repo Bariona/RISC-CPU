@@ -103,7 +103,8 @@ always @(posedge clk) begin
         ram_ena       <= `FALSE;
       end
     end
-    else if (status == `STROE) begin
+    else if (status == `STROE) begin // ??? 这里可以加速store一个unit
+      valid_2lsb    <= `TRUE;
       status        <= `NORM;
       ram_ena       <= `FALSE;
     end

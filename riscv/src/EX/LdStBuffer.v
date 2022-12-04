@@ -2,11 +2,11 @@
 
 `define NORM    3'b000
 `define LOADING 3'b001
-`define WRITING 3'b010
+`define STORING 3'b010
 `define UPDATE  3'b111
 
 module LoadStoreBuffer 
-# (
+#(
   parameter ADDR_BITS = 4
 ) (
   input wire clk,
@@ -119,6 +119,7 @@ always @(posedge clk) begin
         head            <= next_head;        
 
         addr_2mc        <= rs1 + imm;
+        data_2mc        <= rs2[7:0];
         data_written    <= rs2;
 
         case (optype[head]) 
@@ -141,19 +142,19 @@ always @(posedge clk) begin
 
           // Write Through Strategy.
           `OPTYPE_SB: begin
-            status    <= `WRITING;
+            status    <= `STORING;
             wr_2mc    <= `WRITE_MEM;
             totByte   <= 1;
           end
 
           `OPTYPE_SH: begin
-            status    <= `WRITING;
+            status    <= `STORING;
             wr_2mc    <= `WRITE_MEM;
             totByte   <= 2;
           end
 
           `OPTYPE_SW: begin
-            status    <= `WRITING;
+            status    <= `STORING;
             wr_2mc    <= `WRITE_MEM;
             totByte   <= 4;
           end
@@ -191,21 +192,23 @@ always @(posedge clk) begin
       end
     end
 
-    else if (status == `WRITING) begin
-      case (counter)
-        32'h0: data_2mc   <= data_written[7:0];
-        32'h1: data_2mc   <= data_written[15:8];
-        32'h2: data_2mc   <= data_written[23:16];
-        32'h3: data_2mc   <= data_written[31:24];
-      endcase
+    else if (status == `STORING) begin
+      if (rdy_from_mc) begin
+        case (counter)
+          // data_written[7:0] 已经在`NORM里搞定
+          32'h0: data_2mc   <= data_written[15:8];
+          32'h1: data_2mc   <= data_written[23:16];
+          32'h2: data_2mc   <= data_written[31:24];
+        endcase
 
-      counter <= counter + 1;
+        counter <= counter + 1;
 
-      if (counter == totByte - 1) begin
-        status        <= `NORM; 
-        ena_mc        <= `FALSE;
-        totByte       <= `ZERO;
-        counter       <= `ZERO;
+        if (counter == totByte - 1) begin
+          status        <= `NORM; 
+          ena_mc        <= `FALSE;
+          totByte       <= `ZERO;
+          counter       <= `ZERO;
+        end
       end
     end
       

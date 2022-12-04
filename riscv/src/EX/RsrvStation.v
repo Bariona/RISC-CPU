@@ -23,7 +23,8 @@ module ReserveStation (
   input wire [`DATA_IDX_RANGE] imm_from_is,
 
   // port with ALU
-  output reg [`REG_RANGE] optype_2alu,
+  output reg [`OPCODE_TYPE] optype_2alu,
+  output reg [`ROB_ID_RANGE] rd_2alu,
   output reg [`DATA_IDX_RANGE] pc_2alu,
   output reg [`DATA_IDX_RANGE] Vi_2alu,
   output reg [`DATA_IDX_RANGE] Vj_2alu,
@@ -131,6 +132,7 @@ always @(posedge clk) begin
     if (ex_entry_idx != `RS_SIZE) begin // one instruction able to be sent to alu
       busy[ex_entry_idx]  <= `FALSE;
 
+      rd_2alu             <= ID[ex_entry_idx];
       optype_2alu         <= optype[ex_entry_idx];
       pc_2alu             <= pc[ex_entry_idx];
       Vi_2alu             <= Vi[ex_entry_idx];

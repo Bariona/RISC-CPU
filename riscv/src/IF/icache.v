@@ -3,7 +3,7 @@
 `define VALID                  1'b1
 `define STALL                  1'b0
 
-`define BLOCK_INS_CNT                32'h4
+`define BLOCK_INS_CNT          32'h4
 `define INS_00                 31:0
 `define INS_01                 63:32
 `define INS_10                 95:64

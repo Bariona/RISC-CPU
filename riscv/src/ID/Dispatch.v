@@ -14,7 +14,7 @@ module Dispatcher (
   input  wire [`DATA_IDX_RANGE] instr_from_fet,
 
   // from ROB
-  input  wire rob_full,
+  // input  wire rob_full,
   input  wire [`ROB_ID_RANGE] id_from_rob, // alias of current instruction
     /* insert instruction in rob */
   output reg  instr_rdy_2rob,
@@ -33,6 +33,7 @@ module Dispatcher (
 
   // port with register
   output reg  ena_regfile_rename,
+  output reg  [`REG_RANGE]      rd_2reg,
   output reg  [`ROB_ID_RANGE]   rd_alias,
 
   output wire [`REG_RANGE]      rs1_2reg,
@@ -43,7 +44,7 @@ module Dispatcher (
   input  wire [`DATA_IDX_RANGE] Vj_from_rg,
 
   // port with RS
-  input wire rs_full,
+  // input wire rs_full,
   output reg ena_rs,
   output reg [`ROB_ID_RANGE]   rd_alias_2rs,
   output reg [`OPCODE_TYPE]    optype_2rs,
@@ -55,7 +56,7 @@ module Dispatcher (
   output reg [`DATA_IDX_RANGE] imm_2rs,
 
   // port with LSB
-  input wire lsb_full,
+  // input wire lsb_full,
   output reg ena_lsb,
   output reg [`ROB_ID_RANGE]   rd_alias_2lsb,
   output reg [`OPCODE_TYPE]    optype_2lsb,
@@ -108,7 +109,8 @@ always @(posedge clk) begin
   else if (valid_from_fet) begin
     // rename register file
     ena_regfile_rename  <= `TRUE;
-    rd_alias <= id_from_rob;
+    rd_2reg   <= rd;
+    rd_alias  <= id_from_rob;
 
     // update rob
     instr_rdy_2rob  <= `TRUE;
