@@ -25,10 +25,10 @@ module Predictor (
 
 reg [1:0] state[`PREDICTOR_SIZE - 1 : 0];
 
-wire jalImm   = {{12{instr_from_IC[31]}}, instr_from_IC[19:12], instr_from_IC[20], instr_from_IC[30:21], 1'b0};
-wire brcImm   = {{20{instr_from_IC[31]}}, instr_from_IC[7], instr_from_IC[30:25], instr_from_IC[11:8], 1'b0};  
+wire [`DATA_IDX_RANGE] jalImm   = {{12{instr_from_IC[31]}}, instr_from_IC[19:12], instr_from_IC[20], instr_from_IC[30:21], 1'b0};
+wire [`DATA_IDX_RANGE] brcImm   = {{20{instr_from_IC[31]}}, instr_from_IC[7], instr_from_IC[30:25], instr_from_IC[11:8], 1'b0};  
 
-wire offset   = (instr_from_IC[`OPCODE_RANGE] == `JAL_TYPE) ? jalImm : brcImm;
+wire [`DATA_IDX_RANGE] offset   = (instr_from_IC[`OPCODE_RANGE] == `JAL_TYPE) ? jalImm : brcImm;
 
 assign if_jump    = (instr_from_IC[`OPCODE_RANGE] == `JAL_TYPE) ? `TRUE : 
                       ((instr_from_IC[`OPCODE_RANGE] == `B_TYPE) ? state[instr_from_IC[`MAP_IDX]][1]: `FALSE);

@@ -1,3 +1,5 @@
+`define Debug
+
 // consts
 `define TRUE              1'b1
 `define FALSE             1'b0
@@ -5,7 +7,7 @@
 `define REG_ZERO          5'h00
 `define ONE              32'b1
 `define LOAD_MEM          1'b0
-`define WRITE_MEM         1'b1
+`define STORE_MEM         1'b1
 
 // i$ relevant
 `define ICACHE_ENTRY            256

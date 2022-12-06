@@ -13,7 +13,7 @@ module ReserveStation (
   // port with dispatcher
   output wire rs_full,
   input wire rdy_from_is,
-  input wire [`OPCODE_TYPE] optype_from_is,
+  input wire [`OPCODE_TYPE]    optype_from_is,
   input wire [`DATA_IDX_RANGE] pc_from_is,
   input wire [`REG_RANGE]      rd_alias,
   input wire [`REG_RANGE]      Qi_from_is,
@@ -95,11 +95,25 @@ assign ex_entry_idx = ((busy[0] && !Qi[0] && !Qj[0]) ? 0 :
                                                   ((busy[14] && !Qi[14] && !Qj[14]) ? 14 :
                                                     ((busy[15] && !Qi[15] && !Qj[15]) ? 15 : 16
                                                     ))))))))))))))));
+// ==== ISSUE =====
+wire [`ROB_ID_RANGE] Qi_2queue, Qj_2queue;
+wire [`DATA_IDX_RANGE] Vi_2queue, Vj_2queue;
+
+wire checkQi = (lsb_has_result && alias_from_lsb == Qi_from_is);
+wire checkQj = (lsb_has_result && alias_from_lsb == Qj_from_is);
+
+assign Qi_2queue = checkQi ? `RENAMED_ZERO : Qi_from_is;
+assign Qj_2queue = checkQj ? `RENAMED_ZERO : Qj_from_is;
+
+assign Vi_2queue = checkQi ? result_from_lsb : Vi_from_is;
+assign Vj_2queue = checkQj ? result_from_lsb : Vj_from_is; 
+// ================
 
 integer i;
 
 always @(posedge clk) begin
   if (rst || rollback_signal) begin
+    optype_2alu <= `NOP;
     for (i = 0; i < `RS_SIZE; i = i + 1) begin
       busy[i]   <= `FALSE;
       Qi[i]     <= `REG_ZERO;
@@ -122,10 +136,10 @@ always @(posedge clk) begin
       optype[avail_entry]<= optype_from_is;
       pc[avail_entry]    <= pc_from_is;
 
-      Qi[avail_entry]    <= Qi_from_is;
-      Qj[avail_entry]    <= Qj_from_is;
-      Vi[avail_entry]    <= Vi_from_is;
-      Vj[avail_entry]    <= Vj_from_is;
+      Qi[avail_entry]    <= Qi_2queue;
+      Qj[avail_entry]    <= Qj_2queue;
+      Vi[avail_entry]    <= Vi_2queue;
+      Vj[avail_entry]    <= Vj_2queue;
       imm[avail_entry]   <= imm_from_is;
     end
 
@@ -146,7 +160,7 @@ always @(posedge clk) begin
     // update RS 
     if (alu_has_result) begin
       for (i = 0; i < `RS_SIZE; i = i + 1) begin
-        if (busy[i]) begin // ??? 感觉busy可以直接去掉
+        if (busy[i]) begin // TODO: 感觉busy可以直接去掉
           if (Qi[i] == alias_from_alu) begin
             Qi[i]   <= `RENAMED_ZERO;
             Vi[i]   <= result_from_alu;
@@ -161,14 +175,14 @@ always @(posedge clk) begin
 
     if (lsb_has_result) begin
       for (i = 0; i < `RS_SIZE; i = i + 1) begin
-        if (busy[i]) begin // ??? 感觉busy可以直接去掉
+        if (busy[i]) begin // TODO: 感觉busy可以直接去掉
           if (Qi[i] == alias_from_lsb) begin
             Qi[i]   <= `RENAMED_ZERO;
             Vi[i]   <= result_from_lsb;
           end
-          if (Qj[i] == alias_from_alu) begin
+          if (Qj[i] == alias_from_lsb) begin
             Qj[i]   <= `RENAMED_ZERO;
-            Vj[i]   <= result_from_alu;
+            Vj[i]   <= result_from_lsb;
           end
         end
       end

@@ -106,6 +106,7 @@ Predictor predictor (
   .instr_valid(valid_if_pred),
   .instr_from_IC(instr_2pred),
   .cur_pc(curpc_2pred),
+  .if_jump(pred_if_jump),
   .predict_pc(nexpc_2if),
 
   .rob_commit_pc_arrived(ena_pre_from_rob),
@@ -385,9 +386,8 @@ ROB rob (
   .alu_has_result(alu_has_result), // alu
   .alias_from_alu(alias_from_alu),
   .result_from_alu(result_from_alu),
-  
-  .if_jump(if_jump_from_alu),
-  .target_pc(target_pc_from_alu),
+  .jump_res_from_alu(if_jump_from_alu),
+  .jumpTaken_pc_from_alu(target_pc_from_alu),
 
   .lsb_has_result(lsb_has_result),  // lsb
   .alias_from_lsb(alias_from_lsb),

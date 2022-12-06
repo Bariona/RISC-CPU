@@ -36,7 +36,7 @@ reg [`ICACHE_TAG_RANGE]   icache_tag  [`ICACHE_ENTRY - 1 : 0];
 reg [`ICACHE_BLOCK_RANGE] icache_store[`ICACHE_ENTRY - 1 : 0];
 
 wire[`ICACHE_IDX_RANGE] idx = pc[`ICACHE_IDX_RANGE];
-wire      hit       = (rdy_from_fet) ? (valid[idx] && icache_tag[idx] == pc[`ICACHE_TAG_RANGE]) : `FALSE;
+wire      hit       = (rdy_from_fet) ? (valid[idx] && icache_tag[idx] == pc[`ICACHE_TAG_RANGE]) : `TRUE;
 
 wire[1:0] addr_ins  = pc[`INSTR_RANGE];
 assign    instr     = (addr_ins[1]) ? (addr_ins[0] ? icache_store[idx][`INS_11] : icache_store[idx][`INS_10]) : 
@@ -53,7 +53,7 @@ always @(posedge clk) begin
     addr          <= `ZERO;
     mc_ena        <= `FALSE;
     for (i = 0; i < `ICACHE_ENTRY; i = i + 1) begin
-      valid[i]        <= 0;
+      valid[i]        <= `FALSE;
       icache_tag[i]   <= 0;
       icache_store[i] <= 0;
     end
@@ -62,39 +62,42 @@ always @(posedge clk) begin
   end
 
   else begin
-    if (hit) begin
-      status      <= `VALID;
-      mc_ena      <= `FALSE;
-    end
-    else if (status == `VALID) begin         // fill the block(i.e. entry)
-      status          <= `STALL;
-      mc_ena          <= `TRUE;
-      counter         <= `ONE;                // not zero???
-      
-      icache_tag[idx] <= pc[`ICACHE_TAG_RANGE];
-      addr            <= {pc[16:4], 4'b0000}; // ??? hardcoding, waited to be removed
-    end
-    else begin
-      if (valid_from_mc) begin 
-        case (counter)
-          32'h1 : icache_store[idx][`INS_00] <= data_from_mc;
-          32'h2 : icache_store[idx][`INS_01] <= data_from_mc;
-          32'h3 : icache_store[idx][`INS_10] <= data_from_mc;
-          32'h4 : icache_store[idx][`INS_11] <= data_from_mc;
-        endcase
+     //if (rdy_from_fet) begin
+      if (hit) begin
+        status      <= `VALID;
+        mc_ena      <= `FALSE;
+      end
+      else if (status == `VALID) begin          // fill the block(i.e. entry)
+        status          <= `STALL;
+        mc_ena          <= `TRUE;
+        counter         <= `ONE;                // not zero ?
 
-        if (counter <= `BLOCK_INS_CNT - 1) begin
-          counter       <= counter + `ONE;
-          addr          <= addr    +    4;    // next instruction
-        end
-        else begin
-          status        <= `VALID;
-          counter       <= `ZERO;
-          valid[idx]    <= `TRUE;
-          mc_ena        <= `FALSE;
+        valid[idx]      <= `FALSE;              /// TODO: this is very important!
+        icache_tag[idx] <= pc[`ICACHE_TAG_RANGE];
+        addr            <= {pc[16:4], 4'b0000}; //  TODO: hardcoding, waited to be removed
+      end
+      else begin
+        if (valid_from_mc) begin 
+          case (counter)
+            32'h1 : icache_store[idx][`INS_00] <= data_from_mc;
+            32'h2 : icache_store[idx][`INS_01] <= data_from_mc;
+            32'h3 : icache_store[idx][`INS_10] <= data_from_mc;
+            32'h4 : icache_store[idx][`INS_11] <= data_from_mc;
+          endcase
+
+          if (counter <= `BLOCK_INS_CNT - 1) begin
+            counter       <= counter + `ONE;
+            addr          <= addr    +    4;    // next instruction
+          end
+          else begin
+            status        <= `VALID;
+            counter       <= `ZERO;
+            valid[idx]    <= `TRUE;
+            mc_ena        <= `FALSE;
+          end
         end
       end
-    end
+    //end
 
   end
 

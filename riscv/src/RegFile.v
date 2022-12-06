@@ -32,13 +32,14 @@ module RegsiterFile (
 reg [`DATA_IDX_RANGE]   register[`REG_SIZE - 1 : 0];
 reg [`ROB_ID_RANGE]     regAlias[`REG_SIZE - 1 : 0];
 
+// check_rs1: the lateset updated data from ROB
 assign check_rs1 = (rob_has_res && regidx_from_rob == rs1_from_dsp && regAlias[rs1_from_dsp] == regalias_from_rob);
 assign Qi_2dsp = check_rs1 ? `REG_ZERO : regAlias[rs1_from_dsp];
 assign Vi_2dsp = check_rs1 ? result_from_rob : register[rs1_from_dsp];
 
+// check_rs2: the lateset updated data from ROB
 assign check_rs2 = (rob_has_res && regidx_from_rob == rs2_from_dsp && regAlias[rs2_from_dsp] == regalias_from_rob);
-assign Qj_2dsp =  check_rs2 ? `REG_ZERO : regAlias[rs2_from_dsp];
-
+assign Qj_2dsp = check_rs2 ? `REG_ZERO : regAlias[rs2_from_dsp];
 assign Vj_2dsp = check_rs2 ? result_from_rob : register[rs2_from_dsp];
 
 

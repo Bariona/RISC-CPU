@@ -19,6 +19,7 @@ always @(*) begin
   
   has_result  = (optype != `NOP);
   rd_alias    = rd_alias_from_rs;
+  if_jump     = `FALSE;
   
   case (optype)
     `OPTYPE_LUI:   result = imm;

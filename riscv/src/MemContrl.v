@@ -50,33 +50,33 @@ always @(posedge clk) begin
     status  <= `NORM;
     counter <= `ZERO;
     ram_ena <= `FALSE;
+    data_2icache  <= `ZERO;
+    addr_2ram     <= `ZERO;
     valid_2icache <= `FALSE;
-    valid_2lsb <= `FALSE;
+    valid_2lsb    <= `FALSE;
   end
   else if (~rdy) begin //pause
   end
 
   else begin
     if (status == `NORM) begin 
+      
+      valid_2icache <= `FALSE;
+      valid_2lsb    <= `FALSE;
+
       if (wr_ena) begin
         ram_ena       <= `TRUE;
         status        <= (wr_from_lsb) ? `STROE : `LOAD;
-        valid_2lsb    <= `FALSE;
         addr_2ram     <= data_addr;
         data_2ram     <= data_from_lsb;
       end
       else if (fet_ena) begin
         ram_ena       <= `TRUE;
         status        <= `FETCH;
-        valid_2icache <= `FALSE;
-        ram_ena       <= `TRUE;
         counter       <= `ZERO;
         addr_2ram     <= instr_addr; 
       end
-      
-      else begin
-        valid_2icache <= `FALSE;
-        valid_2lsb    <= `FALSE;
+      else begin  
         ram_ena       <= `FALSE;
         counter       <= `ZERO;
         addr_2ram     <= `ZERO;
@@ -103,7 +103,7 @@ always @(posedge clk) begin
         ram_ena       <= `FALSE;
       end
     end
-    else if (status == `STROE) begin // ??? 这里可以加速store一个unit
+    else if (status == `STROE) begin // TODO: 这里可以加速store一个unit
       valid_2lsb    <= `TRUE;
       status        <= `NORM;
       ram_ena       <= `FALSE;
@@ -111,7 +111,7 @@ always @(posedge clk) begin
     else if (status == `LOAD) begin
       valid_2lsb    <= `TRUE;
       data_2lsb     <= data_from_ram;
-      status        <= `NORM; /// ??? 这里可以加速, 多读一个unit
+      status        <= `NORM; /// TODO: 这里可以加速, 多读一个unit
       ram_ena       <= `FALSE;
     end
     else begin // STALL

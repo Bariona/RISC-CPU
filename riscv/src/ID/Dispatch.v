@@ -69,7 +69,7 @@ module Dispatcher (
 
 wire is_ls, is_jump;
 wire [`OPCODE_TYPE] optype;
-wire [`REG_RANGE] rd, rs1, rs2; // ??? send rd to whom?
+wire [`REG_RANGE] rd, rs1, rs2; // TODO: send rd to whom?
 wire [`DATA_IDX_RANGE] imm;
 
 assign rs1_2reg = rs1;
@@ -109,8 +109,8 @@ always @(posedge clk) begin
   else if (valid_from_fet) begin
     // rename register file
     ena_regfile_rename  <= `TRUE;
-    rd_2reg   <= rd;
-    rd_alias  <= id_from_rob;
+    rd_2reg         <= rd;
+    rd_alias        <= id_from_rob;
 
     // update rob
     instr_rdy_2rob  <= `TRUE;

@@ -34,13 +34,13 @@ always @(*) begin
     `JAL_TYPE: begin
       is_jump = `TRUE;
       imm     = {{12{instr[31]}}, instr[19:12], instr[20], instr[30:21], 1'b0};
-      optype  = `JAL_TYPE;
+      optype  = `OPTYPE_JAL;
     end
 
     `JALR_TYPE: begin
       is_jump = `TRUE;
       imm     = {{21{instr[31]}}, instr[30:20]};
-      optype  = `JALR_TYPE;
+      optype  = `OPTYPE_JALR;
     end
 
     `B_TYPE: begin
@@ -103,6 +103,7 @@ always @(*) begin
     end
     
     `S_TYPE: begin
+      rd  = `REG_ZERO;
       imm = {{21{instr[31]}}, instr[30:25], instr[11:7]};
       case (funct3)
         3'b000: optype = `OPTYPE_SB;
