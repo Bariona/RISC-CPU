@@ -99,17 +99,27 @@ assign ex_entry_idx = ((busy[0] && !Qi[0] && !Qj[0]) ? 0 :
 wire [`ROB_ID_RANGE] Qi_2queue, Qj_2queue;
 wire [`DATA_IDX_RANGE] Vi_2queue, Vj_2queue;
 
-wire checkQi = (lsb_has_result && alias_from_lsb == Qi_from_is);
-wire checkQj = (lsb_has_result && alias_from_lsb == Qj_from_is);
+wire checkQi_from_lsb = (lsb_has_result && alias_from_lsb == Qi_from_is);
+wire checkQi_from_alu = (alu_has_result && alias_from_alu == Qi_from_is);
 
-assign Qi_2queue = checkQi ? `RENAMED_ZERO : Qi_from_is;
-assign Qj_2queue = checkQj ? `RENAMED_ZERO : Qj_from_is;
+wire checkQj_from_lsb = (lsb_has_result && alias_from_lsb == Qj_from_is);
+wire checkQj_from_alu = (alu_has_result && alias_from_alu == Qj_from_is);
 
-assign Vi_2queue = checkQi ? result_from_lsb : Vi_from_is;
-assign Vj_2queue = checkQj ? result_from_lsb : Vj_from_is; 
+assign Qi_2queue = checkQi_from_lsb ? `RENAMED_ZERO : (checkQi_from_alu ? `RENAMED_ZERO : Qi_from_is);
+assign Qj_2queue = checkQj_from_lsb ? `RENAMED_ZERO : (checkQj_from_alu ? `RENAMED_ZERO : Qj_from_is);
+
+assign Vi_2queue = checkQi_from_lsb ? result_from_lsb : (checkQi_from_alu ? result_from_alu : Vi_from_is);
+assign Vj_2queue = checkQj_from_lsb ? result_from_lsb : (checkQj_from_alu ? result_from_alu : Vj_from_is); 
 // ================
 
 integer i;
+
+`ifdef Debug
+  integer outfile;
+  initial begin
+    outfile = $fopen("RS.out");
+  end
+`endif 
 
 always @(posedge clk) begin
   if (rst || rollback_signal) begin
@@ -128,6 +138,16 @@ always @(posedge clk) begin
 
   else begin
 
+`ifdef Debug  
+    if (alu_has_result) begin
+      $fdisplay(outfile, "time = %d, alias = %d, result = %x", $time, alias_from_alu, result_from_alu);
+    end
+    for (i = 0; i < `RS_SIZE; i = i + 1) begin
+      if (ID[i] == 8 && busy[i]) begin
+        $fdisplay(outfile, "time = %d, Qi = %d, Qj = %d, Vi = %d, Vj = %d\n", $time, Qi[i], Qj[i], Vi[i], Vj[i]);
+      end
+    end
+`endif
     if (rdy_from_is && !rs_full) begin // can add instruction into RS
       busy[avail_entry]  <= `TRUE;
 

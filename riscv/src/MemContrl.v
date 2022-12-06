@@ -38,7 +38,6 @@ reg [2:0] status;
 reg [`DATA_IDX_RANGE] counter;
 
 assign wr_mc2ram  = wr_ena ? wr_from_lsb : (fet_ena ? `LOAD_MEM : `FALSE);
-assign data_2mem  = data_from_lsb; // ? 是否需要加condition
 
 // initial begin
 //   $display("status is %d at %t", valid_2icache, $realtime);
@@ -57,16 +56,16 @@ always @(posedge clk) begin
   end
   else if (~rdy) begin //pause
   end
-
   else begin
     if (status == `NORM) begin 
       
       valid_2icache <= `FALSE;
       valid_2lsb    <= `FALSE;
 
-      if (wr_ena) begin
+      if (wr_ena) begin  // TODO: 改掉Memory的load形式, 达到1个cycle.
         ram_ena       <= `TRUE;
         status        <= (wr_from_lsb) ? `STROE : `LOAD;
+        counter       <= `ZERO;
         addr_2ram     <= data_addr;
         data_2ram     <= data_from_lsb;
       end
@@ -109,10 +108,14 @@ always @(posedge clk) begin
       ram_ena       <= `FALSE;
     end
     else if (status == `LOAD) begin
-      valid_2lsb    <= `TRUE;
-      data_2lsb     <= data_from_ram;
-      status        <= `NORM; /// TODO: 这里可以加速, 多读一个unit
+      counter       <= counter + `ONE;
       ram_ena       <= `FALSE;
+      if (counter > `ZERO) begin
+        status        <= `NORM; // TODO: 这里可以加速, 多读一个unit
+        valid_2lsb    <= `TRUE;
+        data_2lsb     <= data_from_ram;
+        counter       <= `ZERO;
+      end
     end
     else begin // STALL
       status        <= `NORM;

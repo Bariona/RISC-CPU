@@ -7,6 +7,8 @@ module Dispatcher (
 
   input wire rollback_signal,
 
+  input wire is_full,
+
   // port with InsFetcher
   input  wire valid_from_fet,
   input  wire if_jump_from_fet,
@@ -95,6 +97,13 @@ Decoder decoder (
   .imm(imm)
 );
 
+`ifdef Debug
+  integer outfile;
+  initial begin
+    outfile = $fopen("dsp.out");
+  end
+`endif 
+
 always @(posedge clk) begin
   if (rst || rollback_signal) begin
     ena_lsb <= `FALSE;
@@ -106,8 +115,12 @@ always @(posedge clk) begin
   else if(~rdy) begin // pause
   end
 
-  else if (valid_from_fet) begin
+  else if (valid_from_fet && ~is_full) begin
     // rename register file
+`ifdef Debug
+    $fdisplay(outfile, "time = %d, pc = %x, instruction = %x", $time, pc_from_fet, instr_from_fet);
+`endif
+
     ena_regfile_rename  <= `TRUE;
     rd_2reg         <= rd;
     rd_alias        <= id_from_rob;
@@ -145,9 +158,9 @@ always @(posedge clk) begin
       Vi_2rs  <= Vi_tmp;
       Vj_2rs  <= Vj_tmp;
       imm_2rs <= imm;
-    end
-    
+    end  
   end 
+
   else begin
     ena_lsb <= `FALSE;
     ena_rs  <= `FALSE;

@@ -24,8 +24,6 @@ module cpu(
 	output wire [31:0]			dbgreg_dout		  // cpu register output (debugging demo)
 );
 
-// implementation goes here
-
 // Specifications:
 // - Pause cpu(freeze pc, registers, etc.) when rdy_in is low
 // - Memory read result will be returned in the next cycle. Write takes 1 cycle(no need to wait)
@@ -78,6 +76,8 @@ MemController MC (
   .clk(clk_in),
   .rst(rst_in),
   .rdy(rdy_in),
+
+  // .rollback_signal(rollback_signal),
 
   .fet_ena(ena_mc_icache),
   .instr_addr(addr_2mc),
@@ -190,6 +190,8 @@ Dispatcher dispatcher (
 
   .rollback_signal(rollback_signal),
 
+  .is_full(is_full),
+  
   .valid_from_fet(valid_2dsp),  // instr fetcher
   .if_jump_from_fet(if_jump_2dsp),
   .pc_from_fet(pc_if_dsp),

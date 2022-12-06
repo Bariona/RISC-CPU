@@ -94,11 +94,12 @@ end
 always @(posedge clk) begin
   if (rst || rollback_signal) begin
     rollback_signal <= `FALSE;
-    head          <= 1;
-    tail          <= 1;
-    ena_pred      <= `FALSE;
-    res_rdy_2reg  <= `FALSE;
+    head            <= 1;
+    tail            <= 1;
+    ena_pred        <= `FALSE;
+    res_rdy_2reg    <= `FALSE;
     commit_pc_2pred <= `ZERO;
+    rollback_pc     <= `ZERO;
     for (i = 0; i < `ROB_SIZE; i = i + 1) begin
       ready[i] <= `FALSE;
       jumpRecord[i] <= `FALSE;
@@ -112,9 +113,11 @@ always @(posedge clk) begin
     if (~rob_empty && ready[head]) begin
 
 `ifdef Debug
-      $fdisplay(outfile, "time = %d, \nalias = %d, commited pc: %x, optype = %d\n", $time, head, pc[head], optype[head]);
+      $fdisplay(outfile, "time = %d, \nrd = %d, commited pc: %x, optype = %d", $time, target_rd[head], pc[head], optype[head]);
+      $fdisplay(outfile, "after commit: current head(%d), tail(%d)\n", head, tail);
       if (is_jump[head]) begin
-        $fdisplay(outfile, "jumprecord = %d, ALU's result = %d, branch instr result: %d\n", jumpRecord[head], jump_res_from_alu, jumpRecord[head] == jump_res_from_alu);
+        $fdisplay(outfile, "jumprecord = %d, ALU's result = %d, branch instr result: %d\n", 
+                                jumpRecord[head], jump_res_from_alu, jumpRecord[head] == jumpResult[head]);
       end
 `endif
 
@@ -141,7 +144,7 @@ always @(posedge clk) begin
       end
       // else begin
 `ifdef Debug
-      $fdisplay(outfile, "-> target register: [%x], result = %x, alias = %x\n", target_rd[head], val[head], head);
+      $fdisplay(outfile, "-> target register[%d], result = %x, alias = %x\n", target_rd[head], val[head], head);
 `endif
         //ena_pred  <= `FALSE;
         if (target_rd[head] != 0) begin
@@ -169,11 +172,10 @@ always @(posedge clk) begin
       ready[alias_from_lsb] <= `TRUE;
       val[alias_from_lsb]   <= result_from_lsb;
     end
-
     if (instr_rdy_from_dsp) begin
 `ifdef Debug
-      $fdisplay(outfile, "time = %d, \n add instruction: (%d) \n pc = %x, optype = %d, jumpRecord = %d\n", 
-                            $time, tail, pc_from_dsp, optype_from_dsp, jumpRecord_from_dsp);
+      $fdisplay(outfile, "time = %d, \n current head(%d), add instruction: (%d) \n pc = %x, optype = %d, jumpRecord = %d\n", 
+                            $time, head, tail, pc_from_dsp, optype_from_dsp, jumpRecord_from_dsp);
 `endif
       tail              <= next_tail;
       ready[tail]       <= `FALSE;

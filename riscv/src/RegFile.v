@@ -45,6 +45,13 @@ assign Vj_2dsp = check_rs2 ? result_from_rob : register[rs2_from_dsp];
 
 integer i;
 
+`ifdef Debug
+  integer outfile;
+  initial begin
+    outfile = $fopen("regfile.out");
+  end
+`endif 
+
 always @(posedge clk) begin
   if (rst) begin
     for (i = 0; i < `REG_SIZE; i = i + 1) begin
@@ -62,6 +69,9 @@ always @(posedge clk) begin
   end
 
   else begin
+`ifdef Debug
+    $fdisplay(outfile, "time = %d, reg[10] = %d\n", $time, register[10] & 255);
+`endif
     if (ena_reg_rename && target_reg != `REG_ZERO) begin // rename reg
       regAlias[target_reg] <= targetReg_alias;
     end

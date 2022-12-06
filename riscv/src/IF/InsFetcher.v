@@ -2,6 +2,7 @@
 
 `define FETCH 2'b01
 `define HOLD  2'b00
+`define RBACK 2'b11
 
 module InsFetcher(
   input wire clk, 
@@ -59,17 +60,27 @@ always @(posedge clk) begin
   else if (~rdy) begin // pause 
   end 
 
-  else if (rollback_pc) begin
+  else if (rollback_signal) begin
     pc            <= rollback_pc;
-    pc_2icache    <= `ZERO;
+    // pc_2icache    <= `ZERO; 
+    // rdy_to_fetch  <= `FALSE;
+    // you can't suddenly change pc_2icache/rdy_to_fetch, 
+    // it's will affect i$'s hit result, and then leads `RBACK to immediately detect instr_valid = 1 -> status changed
+
     pc_2dsp       <= `ZERO;
-    status        <= `HOLD;
-    rdy_to_fetch  <= `FALSE;
+    status        <= (status == `FETCH) ? `RBACK : `HOLD;
+    
     valid_2dsp    <= `FALSE;
   end
 
   else begin
-    if (status == `FETCH && ~is_full) begin
+    if (status == `RBACK) begin
+      if (instr_valid) begin
+        status        <= `HOLD;
+        rdy_to_fetch  <= `FALSE;
+      end
+    end
+    else if (status == `FETCH && ~is_full) begin
       if (instr_valid) begin
         status  <= `HOLD;
         pc      <= next_pc;
@@ -82,11 +93,15 @@ always @(posedge clk) begin
       end
     end
     else if (status == `HOLD) begin
-      valid_2dsp      <= `FALSE;
-      instr_2dsp      <= `ZERO;
-      pc_2dsp         <= `ZERO;
+      // valid_2dsp      <= `FALSE; // TODO: check where to place valid_2dsp
+      // instr_2dsp      <= `ZERO;
+      // pc_2dsp         <= `ZERO;
 
       if (~is_full) begin
+        valid_2dsp    <= `FALSE;
+        instr_2dsp    <= `ZERO;
+        pc_2dsp       <= `ZERO;
+
         rdy_to_fetch  <= `TRUE;
         status        <= `FETCH;
         pc_2icache    <= pc;

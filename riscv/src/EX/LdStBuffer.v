@@ -120,10 +120,15 @@ always @(posedge clk) begin
   end
 
   else begin
-`ifdef Debug
-      $fdisplay(outfile, "time = %d, LSB's status = %d\nhead = %d, tail = %d\nQi = %d, Qj = %d\n", $time, status, head, tail, Qi[head], Qj[head]);
-`endif
+// `ifdef Debug
+//       $fdisplay(outfile, "time = %d, LSB's status = %d\nhead = %d, tail = %d\nQi = %d, Qj = %d\n", $time, status, head, tail, Qi[head], Qj[head]);
+// `endif
     if (rdy_from_is && !lsb_full) begin // TODO: is_full?
+
+`ifdef Debug
+      $fdisplay(outfile, "time = %d, add instrution (%d)\nhead = %d, optype = %d\nVi = %x, Vj = %x, Qi = %d, Qj = %d\n", 
+                        $time, tail, head, optype_from_is, Vi_2queue, Vj_2queue, Qi_2queue, Qj_2queue);
+`endif
       tail          <= next_tail;
 
       optype[tail]  <= optype_from_is;
@@ -217,21 +222,28 @@ always @(posedge clk) begin
     else if (status == `LOADING) begin
       if (rdy_from_mc) begin
         case (counter)
-          32'h0: data_acquired[7:0]   <= data_from_mc;
-          32'h1: data_acquired[15:8]  <= data_from_mc;
-          32'h2: data_acquired[23:16] <= data_from_mc;
-          32'h3: data_acquired[31:24] <= data_from_mc;
+          32'h1: data_acquired[7:0]   <= data_from_mc;
+          32'h2: data_acquired[15:8]  <= data_from_mc;
+          32'h3: data_acquired[23:16] <= data_from_mc;
+          32'h4: data_acquired[31:24] <= data_from_mc;
         endcase
 
-        counter <= counter + 1;
+        addr_2mc  <= addr_2mc + `ONE;
+        counter   <= counter  + `ONE;
 
-        if (counter == totByte - 1) begin
+`ifdef Debug
+          $fdisplay(outfile, "time = %d, load || address = %x, data acquired : %x\n", $time, addr_2mc, data_from_mc);
+`endif
+        if (counter == totByte) begin
           lsb_has_result<= `TRUE;
           status        <= `UPDATE; /// TODO: norm 状态下 但是不ready就会一直有has result; 但好像没差别..data_acquierd一直是正确的ld
+          addr_2mc      <= `ZERO;
           ena_mc        <= `FALSE;
           totByte       <= `ZERO;
           counter       <= `ZERO;
-
+`ifdef Debug
+          $fdisplay(outfile, "time = %d, lsb_has_result : %x\n", $time, data_acquired);
+`endif
           if (dealing_optype == `OPTYPE_LB) begin
             data_acquired <= {{25{data_acquired[7]}}, data_acquired[6:0]};
           end
@@ -245,6 +257,7 @@ always @(posedge clk) begin
 
     else if (status == `STORING) begin
       if (rdy_from_mc) begin
+
         case (counter)
           // data_written[7:0] 已经在`NORM里搞定
           32'h0: data_2mc   <= data_written[15:8];
@@ -252,12 +265,23 @@ always @(posedge clk) begin
           32'h2: data_2mc   <= data_written[31:24];
         endcase
 
-        counter <= counter + 1;
+        addr_2mc  <= addr_2mc + `ONE;
+        counter   <= counter  + `ONE;
 
-        if (counter == totByte - 1) begin
-          // lsb_has_result  <= `TRUE;
+`ifdef Debug
+        if (counter == 0)
+          $fdisplay(outfile, "time = %d, store || address = %x, lsb_has_result : %x\n", $time, addr_2mc + 1, data_written[15:8]);
+        if (counter == 1)
+          $fdisplay(outfile, "time = %d, store || address = %x, lsb_has_result : %x\n", $time, addr_2mc + 1, data_written[23:16]);
+        if (counter == 2)
+          $fdisplay(outfile, "time = %d, store || address = %x, lsb_has_result : %x\n", $time, addr_2mc + 1, data_written[31:24]);
+`endif
+
+        if (counter >= totByte - 2) begin
+          lsb_has_result  <= `TRUE;
           status          <= `NORM;
           ena_mc          <= `FALSE;
+          data_2mc        <= `ZERO;
           totByte         <= `ZERO;
           counter         <= `ZERO;
         end

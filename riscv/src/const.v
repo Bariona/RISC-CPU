@@ -1,4 +1,5 @@
-`define Debug
+`define Debug 
+// ↑ enable Debug mode
 
 // consts
 `define TRUE              1'b1
