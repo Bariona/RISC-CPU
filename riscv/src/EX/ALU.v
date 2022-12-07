@@ -15,12 +15,12 @@ module ALU (
   output reg if_jump
 );
 
-// `ifdef Debug
-//   integer outfile;
-//   initial begin
-//     outfile = $fopen("alu.out");
-//   end
-// `endif 
+`ifdef Debug
+  integer outfile;
+  initial begin
+    outfile = $fopen("alu.out");
+  end
+`endif 
 
 always @(*) begin
   
@@ -42,6 +42,7 @@ always @(*) begin
       if_jump   = `TRUE;
       result    = pc + 4;
       target_pc = (rs1 + imm) & ~1;
+    
     end
 
     
@@ -58,7 +59,8 @@ always @(*) begin
       target_pc = pc + imm;
     end
     `OPTYPE_BGE: begin
-      if_jump   = $signed(rs1) > $signed(rs2);
+      // $display("time = %d, rs1 = %x, rs2 = %x, pc = %x", $time, rs1, rs2, pc);
+      if_jump   = $signed(rs1) >= $signed(rs2);
       target_pc = pc + imm;
     end
     `OPTYPE_BLTU: begin

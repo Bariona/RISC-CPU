@@ -51,9 +51,10 @@ wire [`DATA_IDX_RANGE] data_mc2icache;
 wire [`ADDR_IDX] addr_2mc;
 
 // lsb & mc
+wire [2:0] totByte_from_lsb;
 wire ena_mc_from_lsb, wr_2mc_from_lsb, rdy_mc_lsb;
-wire [`DATA_IDX_RANGE] addr_2mc_from_lsb;
-wire [`MEM_IDX_RANGE] data_2mc_from_lsb, data_mc_2lsb;
+wire [`OPCODE_TYPE] optype_lsb_mc;
+wire [`DATA_IDX_RANGE] addr_2mc_from_lsb, data_2mc_from_lsb, data_mc_2lsb;
 
 // fetcher & icache
 wire rd_ena_if_icache, instr_rdy_if_icache;
@@ -86,8 +87,10 @@ MemController MC (
 
   .wr_ena(ena_mc_from_lsb),
   .wr_from_lsb(wr_2mc_from_lsb),
-  .data_addr(addr_2mc_from_lsb),
+  .optype_from_lsb(optype_lsb_mc),
+  .addr_from_lsb(addr_2mc_from_lsb),
   .data_from_lsb(data_2mc_from_lsb),
+  .totByte(totByte_from_lsb),
   .valid_2lsb(rdy_mc_lsb),
   .data_2lsb(data_mc_2lsb),
 
@@ -342,8 +345,10 @@ LoadStoreBuffer #(.ADDR_BITS(4)) LSB (
 
   .ena_mc(ena_mc_from_lsb), // mc
   .wr_2mc(wr_2mc_from_lsb),
+  .optype_2mc(optype_lsb_mc),
   .addr_2mc(addr_2mc_from_lsb),
   .data_2mc(data_2mc_from_lsb),
+  .totByte(totByte_from_lsb),
   .rdy_from_mc(rdy_mc_lsb),
   .data_from_mc(data_mc_2lsb),
 

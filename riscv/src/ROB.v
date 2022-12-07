@@ -112,18 +112,21 @@ always @(posedge clk) begin
   else begin
     if (~rob_empty && ready[head]) begin
 
-    if (rob_full) begin
-      $fdisplay(outfile, "time = %d, ---- ROB is full ----", $time);
-    end
+    // if (rob_full) begin
+    //   $fdisplay(outfile, "time = %d, ---- ROB is full ----", $time);
+    // end
 
-    // $fdisplay(outfile, "pc = %x", pc[head]);
-    $fdisplay(outfile, "time = %d, pc = %x, optype = %d", $time, pc[head], optype[head]);
+`ifndef Debug
+    $fdisplay(outfile, "pc = %x", pc[head]);
+    // $fdisplay(outfile, "time = %d, pc = %x, optype = %d", $time, pc[head], optype[head]);
+`endif
+    
 `ifdef Debug
       $fdisplay(outfile, "time = %d, \nrd = %d, commited pc: %x, optype = %d", $time, target_rd[head], pc[head], optype[head]);
       $fdisplay(outfile, "after commit: current head(%d), tail(%d)\n", head, tail);
       if (is_jump[head]) begin
-        $fdisplay(outfile, "jumprecord = %d, ALU's result = %d, branch instr result: %d\n", 
-                                jumpRecord[head], jumpResult[head], jumpRecord[head] == jumpResult[head]);
+        $fdisplay(outfile, "jumprecord = %d, ALU's result = %d, branch instr result: %d, pc_Taken = %x\n", 
+                                jumpRecord[head], jumpResult[head], jumpRecord[head] == jumpResult[head], jumpTakenPc[head]);
       end
 `endif
 
@@ -139,6 +142,9 @@ always @(posedge clk) begin
         commit_pc_2pred <= pc[head];
 
         if (jumpRecord[head] != jumpResult[head]) begin
+// `ifdef Debug
+//         $fdisplay(outfile, "")
+// `endif
           predict_res       <= `FALSE;
           rollback_signal   <= `TRUE;
           rollback_pc       <= jumpResult[head] ? jumpTakenPc[head] : pc[head] + 4;
@@ -156,8 +162,8 @@ always @(posedge clk) begin
 `endif
       if (target_rd[head] != 0) begin
         res_rdy_2reg    <= `TRUE;
-        res_2reg        <= val[head];
         regidx_2regfile <= target_rd[head];
+        res_2reg        <= val[head];
         reg_alias       <= head;
       end
     end

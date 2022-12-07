@@ -33,7 +33,8 @@
 
 
 
-- [ ] load/store 指令都会在做两次store 或者 load.... 这是为什么 (是因为一直set ena_mc = 1导致的)
+- [x] load/store 指令都会在做两次store 或者 load.... 这是为什么 (是因为一直set ena_mc = 1导致的)
+- [ ] When LSB is in ``LOAD` status, `rollback_signal = 1`...
 
   solution: remove the whole code into memory controller.
 

@@ -144,9 +144,12 @@ always @(posedge clk) begin
 
   else if (valid_from_fet && ~is_full) begin
     // rename register file
+    if (instr_from_fet == 32'hff00513) begin
+      $display("time to end: %d\n", $time);
+    end
 `ifdef Debug
     $fdisplay(outfile, "time = %d, pc = %x, instruction = %x", $time, pc_from_fet, instr_from_fet);
-    $fdisplay(outfile, "alu: %d, lsb: %d, Qi = %d, Qj = %d, Vi = %d, Vj = %d\n", alu_has_result, lsb_has_result, Qi, Qj, Vi, Vj);
+    $fdisplay(outfile, "optype = %d, alu: %d, lsb: %d, Qi = %d, Qj = %d, Vi = %d, Vj = %d\n", optype, alu_has_result, lsb_has_result, Qi, Qj, Vi, Vj);
 `endif
 
     ena_regfile_rename  <= `TRUE;

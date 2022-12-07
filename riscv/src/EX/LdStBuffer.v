@@ -3,7 +3,8 @@
 `define NORM    3'b000
 `define LOADING 3'b001
 `define STORING 3'b010
-`define UPDATE  3'b111
+`define RBACK   3'b111
+// `define UPDATE  3'b111
 
 module LoadStoreBuffer 
 #(
@@ -31,10 +32,12 @@ module LoadStoreBuffer
   // port with memory controller
   output reg ena_mc,
   output reg wr_2mc,
+  output reg [`OPCODE_TYPE]    optype_2mc,
   output reg [`DATA_IDX_RANGE] addr_2mc,
-  output reg [`MEM_IDX_RANGE] data_2mc,
+  output reg [`DATA_IDX_RANGE] data_2mc,
+  output reg [2:0]             totByte,
   input wire rdy_from_mc,
-  input wire [`MEM_IDX_RANGE] data_from_mc,
+  input wire [`DATA_IDX_RANGE] data_from_mc,
 
   // RS's cdb result
   input wire alu_has_result,
@@ -44,15 +47,12 @@ module LoadStoreBuffer
   // LSB's cdb result
   output reg lsb_has_result,
   output reg  [`ROB_ID_RANGE]   alias_from_lsb,
-  output wire [`DATA_IDX_RANGE] result_from_lsb,
+  output reg [`DATA_IDX_RANGE] result_from_lsb,
 
   input wire rollback_signal
 );
 
 reg [2:0] status;
-reg [`DATA_IDX_RANGE] counter, totByte;
-reg [`DATA_IDX_RANGE] data_acquired, data_written;
-reg [`OPCODE_TYPE]    dealing_optype;
 
 // ===== FIFO =====
 reg [ADDR_BITS - 1 : 0] head, tail;
@@ -69,20 +69,21 @@ wire [ADDR_BITS - 1 : 0] next_tail = (tail == 2 ** ADDR_BITS - 1) ? 0 : tail + 1
 // ================
 
 // ==== ISSUE =====
-wire [`ROB_ID_RANGE]   Qi_2queue, Qj_2queue;
+wire [`ROB_ID_RANGE] Qi_2queue, Qj_2queue;
 wire [`DATA_IDX_RANGE] Vi_2queue, Vj_2queue;
 
-wire checkQi_from_lsb = (lsb_has_result && alias_from_lsb == Qi_from_is);
+wire checkQi_from_lsb = (rdy_from_mc && status != `RBACK && alias_from_lsb == Qi_from_is);
 wire checkQi_from_alu = (alu_has_result && alias_from_alu == Qi_from_is);
 
-wire checkQj_from_lsb = (lsb_has_result && alias_from_lsb == Qj_from_is);
+wire checkQj_from_lsb = (rdy_from_mc && status != `RBACK && alias_from_lsb == Qj_from_is);
 wire checkQj_from_alu = (alu_has_result && alias_from_alu == Qj_from_is);
 
 assign Qi_2queue = checkQi_from_lsb ? `RENAMED_ZERO : (checkQi_from_alu ? `RENAMED_ZERO : Qi_from_is);
 assign Qj_2queue = checkQj_from_lsb ? `RENAMED_ZERO : (checkQj_from_alu ? `RENAMED_ZERO : Qj_from_is);
 
-assign Vi_2queue = checkQi_from_lsb ? result_from_lsb : (checkQi_from_alu ? result_from_alu : Vi_from_is);
-assign Vj_2queue = checkQj_from_lsb ? result_from_lsb : (checkQj_from_alu ? result_from_alu : Vj_from_is); 
+assign Vi_2queue = checkQi_from_lsb ? data_from_mc : (checkQi_from_alu ? result_from_alu : Vi_from_is);
+assign Vj_2queue = checkQj_from_lsb ? data_from_mc : (checkQj_from_alu ? result_from_alu : Vj_from_is); 
+
 // ================
 
 // ==== EX part ====
@@ -96,7 +97,6 @@ assign imm = immediate[head];
 // =================
 
 assign lsb_full = (next_tail == head); // whether is full
-assign result_from_lsb = data_acquired;
 
 integer i;
 
@@ -108,17 +108,21 @@ integer i;
 `endif 
 
 always @(posedge clk) begin
-  if (rst || rollback_signal) begin
+  if (rst) begin
     status     <= `NORM;
     ena_mc     <= `FALSE;
     head       <= 0;
     tail       <= 0;
-    counter    <= `ZERO;
     totByte    <= `ZERO;
     lsb_has_result <= `FALSE;
   end
 
   else if (~rdy) begin // pause
+  end
+  else if (rollback_signal) begin
+    status  <= (status == `LOADING) ? `RBACK : `NORM;
+    head    <= 0;
+    tail    <= 0;
   end
 
   else begin
@@ -127,10 +131,10 @@ always @(posedge clk) begin
 // `endif
     if (rdy_from_is && !lsb_full) begin // TODO: is_full?
 
-`ifdef Debug
-      $fdisplay(outfile, "time = %d, add instrution (%d)\nhead = %d, optype = %d\nVi = %x, Vj = %x, Qi = %d, Qj = %d\n", 
-                        $time, tail, head, optype_from_is, Vi_2queue, Vj_2queue, Qi_2queue, Qj_2queue);
-`endif
+// `ifdef Debug
+//       $fdisplay(outfile, "time = %d, add instrution (%d)\nhead = %d, optype = %d\nVi = %x, Vj = %x, Qi = %d, Qj = %d\n", 
+//                         $time, tail, head, optype_from_is, Vi_2queue, Vj_2queue, Qi_2queue, Qj_2queue);
+// `endif
       tail          <= next_tail;
 
       optype[tail]  <= optype_from_is;
@@ -147,7 +151,7 @@ always @(posedge clk) begin
 // `ifdef Debug
 //       $fdisplay(outfile, "time = %d, ALU's alias = %d\n", $time, alias_from_alu);
 // `endif
-      for (i = 0; i < (2 ** ADDR_BITS); i = i + 1) begin // TODO: 感觉这里会更新一些空的entry
+      for (i = 0; i < (2 ** ADDR_BITS); i = i + 1) begin
         if (Qi[i] == alias_from_alu) begin
           Qi[i]   <= `RENAMED_ZERO;
           Vi[i]   <= result_from_alu;
@@ -168,17 +172,11 @@ always @(posedge clk) begin
 
       if (ready) begin     
         head            <= next_head;
-  
         alias_from_lsb  <= ID[head];
-        dealing_optype  <= optype[head];
         
-        data_acquired   <= `ZERO;
-        counter         <= `ZERO;
-
         ena_mc          <= `TRUE;
+        optype_2mc      <= optype[head];
         addr_2mc        <= rs1 + imm;
-        data_2mc        <= rs2[7:0];
-        data_written    <= rs2;
 
         case (optype[head]) 
           `OPTYPE_LB, `OPTYPE_LBU: begin
@@ -202,112 +200,85 @@ always @(posedge clk) begin
           `OPTYPE_SB: begin
             status    <= `STORING;
             wr_2mc    <= `STORE_MEM;
+            data_2mc  <= rs2;
             totByte   <= 1;
           end
 
           `OPTYPE_SH: begin
             status    <= `STORING;
             wr_2mc    <= `STORE_MEM;
+            data_2mc  <= rs2;
             totByte   <= 2;
           end
 
           `OPTYPE_SW: begin
             status    <= `STORING;
             wr_2mc    <= `STORE_MEM;
+            data_2mc  <= rs2;
             totByte   <= 4;
           end
         endcase
       end
-
+      else begin
+        ena_mc     <= `FALSE;
+        optype_2mc <= `NOP;
+      end
     end
 
     else if (status == `LOADING) begin
       if (rdy_from_mc) begin
-        case (counter)
-          32'h1: data_acquired[7:0]   <= data_from_mc;
-          32'h2: data_acquired[15:8]  <= data_from_mc;
-          32'h3: data_acquired[23:16] <= data_from_mc;
-          32'h4: data_acquired[31:24] <= data_from_mc;
-        endcase
-
-        addr_2mc  <= addr_2mc + `ONE;
-        counter   <= counter  + `ONE;
-
-`ifdef Debug
-      if (counter > 0) begin
-          $fdisplay(outfile, "time = %d, load || address = %x, data acquired : %x\n", $time, addr_2mc, data_from_mc);
-      end
-
-`endif
-        if (counter == totByte) begin
-          lsb_has_result<= `TRUE;
-          status        <= `UPDATE; /// TODO: norm 状态下 但是不ready就会一直有has result; 但好像没差别..data_acquierd一直是正确的ld
-          addr_2mc      <= `ZERO;
-          ena_mc        <= `FALSE;
-          totByte       <= `ZERO;
-          counter       <= `ZERO;
-`ifdef Debug
-          $fdisplay(outfile, "time = %d, lsb_has_result : %x\n", $time, data_acquired);
-`endif
-          if (dealing_optype == `OPTYPE_LB) begin
-            data_acquired <= {{25{data_acquired[7]}}, data_acquired[6:0]};
-          end
-          else if (dealing_optype == `OPTYPE_LH) begin
-            data_acquired <= {{17{data_acquired[15]}}, data_acquired[14:0]};
-          end
+        ena_mc  <= `FALSE;
+        status  <= `NORM;
+        totByte <= 0;
+        lsb_has_result  <= `TRUE;
+        result_from_lsb <= data_from_mc;
         
+        for (i = 0; i < (2**ADDR_BITS); i = i + 1) begin // TODO: 感觉这里会更新一些空的entry
+          if (Qi[i] == alias_from_lsb) begin
+            Qi[i]   <= `RENAMED_ZERO;
+            Vi[i]   <= data_from_mc;
+          end
+          if (Qj[i] == alias_from_lsb) begin
+            Qj[i]   <= `RENAMED_ZERO;
+            Vj[i]   <= data_from_mc;
+          end
         end
+// `ifdef Debug
+//       if (counter > 0) begin
+//           $fdisplay(outfile, "time = %d, load || address = %x, data acquired : %x\n", $time, addr_2mc, data_from_mc);
+//       end
+// `endif
       end
     end
 
     else if (status == `STORING) begin
       if (rdy_from_mc) begin
+        ena_mc  <= `FALSE;
+        wr_2mc  <= `FALSE;
+        status  <= `NORM;
 
-        case (counter)
-          // data_written[7:0] 已经在`NORM里搞定
-          32'h0: data_2mc   <= data_written[15:8];
-          32'h1: data_2mc   <= data_written[23:16];
-          32'h2: data_2mc   <= data_written[31:24];
-        endcase
+        totByte <= 0;
+        lsb_has_result  <= `TRUE;
+        result_from_lsb <= `ZERO;
+// `ifdef Debug
+//         if (counter == 0)
+//           $fdisplay(outfile, "time = %d, store || address = %x, data acquired : %x\n", $time, addr_2mc + 1, data_written[15:8]);
+//         if (counter == 1)
+//           $fdisplay(outfile, "time = %d, store || address = %x, data acquired : %x\n", $time, addr_2mc + 1, data_written[23:16]);
+//         if (counter == 2)
+//           $fdisplay(outfile, "time = %d, store || address = %x, data acquired : %x\n", $time, addr_2mc + 1, data_written[31:24]);
+// `endif
 
-        addr_2mc  <= addr_2mc + `ONE;
-        counter   <= counter  + `ONE;
-
-`ifdef Debug
-        if (counter == 0)
-          $fdisplay(outfile, "time = %d, store || address = %x, data acquired : %x\n", $time, addr_2mc + 1, data_written[15:8]);
-        if (counter == 1)
-          $fdisplay(outfile, "time = %d, store || address = %x, data acquired : %x\n", $time, addr_2mc + 1, data_written[23:16]);
-        if (counter == 2)
-          $fdisplay(outfile, "time = %d, store || address = %x, data acquired : %x\n", $time, addr_2mc + 1, data_written[31:24]);
-`endif
-
-        if (counter >= totByte - 2) begin
-          lsb_has_result  <= `TRUE;
-          status          <= `NORM;
-          ena_mc          <= `FALSE;
-          data_2mc        <= `ZERO;
-          totByte         <= `ZERO;
-          counter         <= `ZERO;
-        end
       end
     end
-      
-    else if (status == `UPDATE) begin
-      // use the result update LSB
-      status  <= `NORM;
-      for (i = 0; i < (2**ADDR_BITS); i = i + 1) begin // TODO: 感觉这里会更新一些空的entry
-        if (Qi[i] == alias_from_lsb) begin
-          Qi[i]   <= `RENAMED_ZERO;
-          Vi[i]   <= data_acquired;
-        end
-        if (Qj[i] == alias_from_lsb) begin
-          Qj[i]   <= `RENAMED_ZERO;
-          Vj[i]   <= data_acquired;
-        end
+    else if (status == `RBACK) begin
+      if (rdy_from_mc) begin
+        status          <= `NORM;
+        ena_mc          <= `FALSE;
+        lsb_has_result  <= `FALSE;
+        totByte         <= 0;
       end
     end
-
   end
 
 end
