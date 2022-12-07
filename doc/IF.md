@@ -41,7 +41,11 @@ Say we have 256 entries, then the map_idx should be pc[11:4], and as for which i
 
 
 
+- [ ] 当一条指令刚被加入ROB, 下一个周期ROB: full
 
+  但这时候还是会有Fetch指令, 导致ROB会超出大小
+
+- [ ] When `rollback_signal = 1` and status = ``FETCH`, we stall until i$ and Memory Controller solved last instruction...
 
 ## Predictor:
 

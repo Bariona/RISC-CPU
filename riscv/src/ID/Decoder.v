@@ -79,11 +79,11 @@ always @(*) begin
         3'b111: optype = `OPTYPE_ANDI;
         3'b001: begin
           optype = `OPTYPE_SLLI;
-          imm    = instr[24:20];
+          imm    = {26'b0, instr[24:20]};
         end
         3'b101: begin
           optype = instr[30] ? `OPTYPE_SRAI : `OPTYPE_SRLI;
-          imm    = instr[24:20];
+          imm    = {26'b0, instr[24:20]};
         end
       endcase
     end

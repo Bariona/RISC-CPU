@@ -2,7 +2,9 @@
 
 ![](https://img.shields.io/badge/language-verilog-brightgreen) 
 
-- [课程地址](https://github.com/ACMClassCourses/RISCV-CPU)
+A toy CPU based on Tomasulo Algorithm, implemented by Verilog HDL language.
+
+- [Course Link](https://github.com/ACMClassCourses/RISCV-CPU)
 
 ## Design
 

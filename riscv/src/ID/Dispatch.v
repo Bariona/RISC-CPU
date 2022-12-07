@@ -66,7 +66,17 @@ module Dispatcher (
   output reg [`ROB_ID_RANGE]   Qj_2lsb,
   output reg [`DATA_IDX_RANGE] Vi_2lsb,
   output reg [`DATA_IDX_RANGE] Vj_2lsb,
-  output reg [`DATA_IDX_RANGE] imm_2lsb
+  output reg [`DATA_IDX_RANGE] imm_2lsb,
+
+  // RS's cdb result
+  input wire alu_has_result,
+  input wire [`ROB_ID_RANGE]   alias_from_alu,
+  input wire [`DATA_IDX_RANGE] result_from_alu,
+
+  // LSB's cdb result
+  input wire lsb_has_result,
+  input wire [`ROB_ID_RANGE]   alias_from_lsb,
+  input wire [`DATA_IDX_RANGE] result_from_lsb
 );
 
 wire is_ls, is_jump;
@@ -80,10 +90,27 @@ assign rs2_2reg = rs2;
 assign Qi_2rob  = Qi_from_rg;
 assign Qj_2rob  = Qj_from_rg;
 
+
+// ==== ISSUE =====
+
+// check register File & ROB (not commited instuction)
 wire [`ROB_ID_RANGE]   Qi_tmp = (!Qi_from_rg) ? `RENAMED_ZERO : (rob_Qi_rdy ? `RENAMED_ZERO : Qi_from_rg);
 wire [`ROB_ID_RANGE]   Qj_tmp = (!Qj_from_rg) ? `RENAMED_ZERO : (rob_Qj_rdy ? `RENAMED_ZERO : Qj_from_rg);
 wire [`DATA_IDX_RANGE] Vi_tmp = (!Qi_from_rg) ? Vi_from_rg : (rob_Qi_rdy ? Vi_from_rob : `ZERO);
 wire [`DATA_IDX_RANGE] Vj_tmp = (!Qj_from_rg) ? Vj_from_rg : (rob_Qj_rdy ? Vj_from_rob : `ZERO);
+
+wire checkQi_from_lsb = (lsb_has_result && alias_from_lsb == Qi_tmp);
+wire checkQi_from_alu = (alu_has_result && alias_from_alu == Qi_tmp);
+
+wire checkQj_from_lsb = (lsb_has_result && alias_from_lsb == Qj_tmp);
+wire checkQj_from_alu = (alu_has_result && alias_from_alu == Qj_tmp);
+
+wire [`ROB_ID_RANGE] Qi = checkQi_from_lsb ? `RENAMED_ZERO : (checkQi_from_alu ? `RENAMED_ZERO : Qi_tmp);
+wire [`ROB_ID_RANGE] Qj = checkQj_from_lsb ? `RENAMED_ZERO : (checkQj_from_alu ? `RENAMED_ZERO : Qj_tmp);
+
+wire [`DATA_IDX_RANGE] Vi = checkQi_from_lsb ? result_from_lsb : (checkQi_from_alu ? result_from_alu : Vi_tmp);
+wire [`DATA_IDX_RANGE] Vj = checkQj_from_lsb ? result_from_lsb : (checkQj_from_alu ? result_from_alu : Vj_tmp); 
+// ================
 
 Decoder decoder (
   .instr(instr_from_fet),
@@ -119,6 +146,7 @@ always @(posedge clk) begin
     // rename register file
 `ifdef Debug
     $fdisplay(outfile, "time = %d, pc = %x, instruction = %x", $time, pc_from_fet, instr_from_fet);
+    $fdisplay(outfile, "alu: %d, lsb: %d, Qi = %d, Qj = %d, Vi = %d, Vj = %d\n", alu_has_result, lsb_has_result, Qi, Qj, Vi, Vj);
 `endif
 
     ena_regfile_rename  <= `TRUE;
@@ -139,10 +167,10 @@ always @(posedge clk) begin
 
       optype_2lsb   <= optype;
       rd_alias_2lsb <= id_from_rob;
-      Qi_2lsb   <= Qi_tmp;
-      Qj_2lsb   <= Qj_tmp;
-      Vi_2lsb   <= Vi_tmp;
-      Vj_2lsb   <= Vj_tmp;
+      Qi_2lsb   <= Qi;
+      Qj_2lsb   <= Qj;
+      Vi_2lsb   <= Vi;
+      Vj_2lsb   <= Vj;
       imm_2lsb  <= imm;
     end
 
@@ -153,10 +181,10 @@ always @(posedge clk) begin
       optype_2rs    <= optype;
       rd_alias_2rs  <= id_from_rob;
       pc_2rs  <= pc_from_fet;
-      Qi_2rs  <= Qi_tmp;
-      Qj_2rs  <= Qj_tmp;
-      Vi_2rs  <= Vi_tmp;
-      Vj_2rs  <= Vj_tmp;
+      Qi_2rs  <= Qi;
+      Qj_2rs  <= Qj;
+      Vi_2rs  <= Vi;
+      Vj_2rs  <= Vj;
       imm_2rs <= imm;
     end  
   end 

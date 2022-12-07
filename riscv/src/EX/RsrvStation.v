@@ -138,16 +138,16 @@ always @(posedge clk) begin
 
   else begin
 
-`ifdef Debug  
-    if (alu_has_result) begin
-      $fdisplay(outfile, "time = %d, alias = %d, result = %x", $time, alias_from_alu, result_from_alu);
-    end
-    for (i = 0; i < `RS_SIZE; i = i + 1) begin
-      if (ID[i] == 8 && busy[i]) begin
-        $fdisplay(outfile, "time = %d, Qi = %d, Qj = %d, Vi = %d, Vj = %d\n", $time, Qi[i], Qj[i], Vi[i], Vj[i]);
-      end
-    end
-`endif
+// `ifdef Debug  
+//     if (alu_has_result) begin
+//       $fdisplay(outfile, "time = %d, alias = %d, result = %x", $time, alias_from_alu, result_from_alu);
+//     end
+//     for (i = 0; i < `RS_SIZE; i = i + 1) begin
+//       if (ID[i] == 8 && busy[i]) begin
+//         $fdisplay(outfile, "time = %d, Qi = %d, Qj = %d, Vi = %d, Vj = %d\n", $time, Qi[i], Qj[i], Vi[i], Vj[i]);
+//       end
+//     end
+// `endif
     if (rdy_from_is && !rs_full) begin // can add instruction into RS
       busy[avail_entry]  <= `TRUE;
 
@@ -165,6 +165,12 @@ always @(posedge clk) begin
 
     if (ex_entry_idx != `RS_SIZE) begin // one instruction able to be sent to alu
       busy[ex_entry_idx]  <= `FALSE;
+
+`ifdef Debug
+  if (optype[ex_entry_idx] == `OPTYPE_ADDI) begin
+    $fdisplay(outfile, "time = %d, rs1 = %x, rs2 = %x, imm = %x", $time, Vi[ex_entry_idx], Vj[ex_entry_idx], imm[ex_entry_idx]);
+  end
+`endif
 
       rd_2alu             <= ID[ex_entry_idx];
       optype_2alu         <= optype[ex_entry_idx];

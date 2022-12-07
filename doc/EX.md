@@ -25,4 +25,16 @@
 
 
 
-- [ ] is_full: dispatch的处理
+- [ ] is_full signal: to dispatch
+
+- [x] while issuing an instruction into the FIFO, consider at the same time ALU has calculated the result of Qi/Qj
+
+  You need to update the information, i.e., Qi/Qj = 0, Vi/Vj = result from ALU
+
+
+
+- [ ] load/store 指令都会在做两次store 或者 load.... 这是为什么 (是因为一直set ena_mc = 1导致的)
+
+  solution: remove the whole code into memory controller.
+
+  ​

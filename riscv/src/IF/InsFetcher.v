@@ -90,6 +90,7 @@ always @(posedge clk) begin
         valid_2dsp   <= `TRUE;
         instr_2dsp   <= instr_from_icache;
         pc_2dsp      <= pc;
+        rdy_to_fetch <= `FALSE;
       end
     end
     else if (status == `HOLD) begin
@@ -107,6 +108,7 @@ always @(posedge clk) begin
         pc_2icache    <= pc;
       end
       else begin
+        // valid_2dsp    <= `FALSE;
         rdy_to_fetch  <= `FALSE;
       end
     end

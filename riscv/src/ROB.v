@@ -112,12 +112,18 @@ always @(posedge clk) begin
   else begin
     if (~rob_empty && ready[head]) begin
 
+    if (rob_full) begin
+      $fdisplay(outfile, "time = %d, ---- ROB is full ----", $time);
+    end
+
+    // $fdisplay(outfile, "pc = %x", pc[head]);
+    $fdisplay(outfile, "time = %d, pc = %x, optype = %d", $time, pc[head], optype[head]);
 `ifdef Debug
       $fdisplay(outfile, "time = %d, \nrd = %d, commited pc: %x, optype = %d", $time, target_rd[head], pc[head], optype[head]);
       $fdisplay(outfile, "after commit: current head(%d), tail(%d)\n", head, tail);
       if (is_jump[head]) begin
         $fdisplay(outfile, "jumprecord = %d, ALU's result = %d, branch instr result: %d\n", 
-                                jumpRecord[head], jump_res_from_alu, jumpRecord[head] == jumpResult[head]);
+                                jumpRecord[head], jumpResult[head], jumpRecord[head] == jumpResult[head]);
       end
 `endif
 
@@ -129,7 +135,7 @@ always @(posedge clk) begin
       if (is_jump[head]) begin
         // branch instruction 
         ena_pred        <= `TRUE;
-        res_rdy_2reg    <= `FALSE;
+        // res_rdy_2reg    <= `FALSE;
         commit_pc_2pred <= pc[head];
 
         if (jumpRecord[head] != jumpResult[head]) begin
@@ -142,18 +148,18 @@ always @(posedge clk) begin
           rollback_signal   <= `FALSE;
         end
       end
-      // else begin
+      else begin
+        ena_pred  <= `FALSE;
+      end
 `ifdef Debug
       $fdisplay(outfile, "-> target register[%d], result = %x, alias = %x\n", target_rd[head], val[head], head);
 `endif
-        //ena_pred  <= `FALSE;
-        if (target_rd[head] != 0) begin
-          res_rdy_2reg    <= `TRUE;
-          res_2reg        <= val[head];
-          regidx_2regfile <= target_rd[head];
-          reg_alias       <= head;
-        end
-      // end
+      if (target_rd[head] != 0) begin
+        res_rdy_2reg    <= `TRUE;
+        res_2reg        <= val[head];
+        regidx_2regfile <= target_rd[head];
+        reg_alias       <= head;
+      end
     end
     else begin
       ena_pred      <= `FALSE;

@@ -15,6 +15,13 @@ module ALU (
   output reg if_jump
 );
 
+// `ifdef Debug
+//   integer outfile;
+//   initial begin
+//     outfile = $fopen("alu.out");
+//   end
+// `endif 
+
 always @(*) begin
   
   has_result  = (optype != `NOP);

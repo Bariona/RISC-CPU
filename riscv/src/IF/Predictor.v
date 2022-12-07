@@ -31,7 +31,7 @@ wire [`DATA_IDX_RANGE] brcImm   = {{20{instr_from_IC[31]}}, instr_from_IC[7], in
 wire [`DATA_IDX_RANGE] offset   = (instr_from_IC[`OPCODE_RANGE] == `JAL_TYPE) ? jalImm : brcImm;
 
 assign if_jump    = (instr_from_IC[`OPCODE_RANGE] == `JAL_TYPE) ? `TRUE : 
-                      ((instr_from_IC[`OPCODE_RANGE] == `B_TYPE) ? state[instr_from_IC[`MAP_IDX]][1]: `FALSE);
+                      ((instr_from_IC[`OPCODE_RANGE] == `B_TYPE) ? state[cur_pc[`MAP_IDX]][1]: `FALSE); // cur_pc(√) instr_from_IC(×)
 assign predict_pc = (if_jump) ? cur_pc + offset : cur_pc + 4;
 
 integer i;
@@ -47,7 +47,7 @@ always @(posedge clk) begin
   else begin
     if (rob_commit_pc_arrived) begin
       if (~hit_res) begin
-        state[rob_commit_pc[`MAP_IDX]] <= state[rob_commit_pc[`MAP_IDX]] + (state[rob_commit_pc[`MAP_IDX]][1]) ? -1 : 1;
+        state[rob_commit_pc[`MAP_IDX]] <= state[rob_commit_pc[`MAP_IDX]] + ((state[rob_commit_pc[`MAP_IDX]][1]) ? -1 : 1);
       end
       else begin
         state[rob_commit_pc[`MAP_IDX]] <= (state[rob_commit_pc[`MAP_IDX]][1]) ? 3 : 0;

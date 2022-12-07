@@ -183,6 +183,16 @@ wire [`ROB_ID_RANGE] rd_alias_dsp_lsb, Qi_dsp_lsb, Qj_dsp_lsb;
 wire [`OPCODE_TYPE] optype_dsp_lsb;
 wire [`DATA_IDX_RANGE] Vi_dsp_lsb, Vj_dsp_lsb, imm_dsp_lsb;
 
+// alu CDB
+wire alu_has_result;
+wire [`ROB_ID_RANGE] alias_from_alu;
+wire [`DATA_IDX_RANGE] result_from_alu;
+
+// LSB CDB
+wire lsb_has_result;
+wire [`ROB_ID_RANGE] alias_from_lsb;
+wire [`DATA_IDX_RANGE] result_from_lsb;
+
 Dispatcher dispatcher (
   .clk(clk_in),
   .rst(rst_in),
@@ -240,23 +250,22 @@ Dispatcher dispatcher (
   .Qj_2lsb(Qj_dsp_lsb),
   .Vi_2lsb(Vi_dsp_lsb),
   .Vj_2lsb(Vj_dsp_lsb),
-  .imm_2lsb(imm_dsp_lsb)
+  .imm_2lsb(imm_dsp_lsb),
+
+  // cdb info
+  .alu_has_result(alu_has_result),  // alu cdb
+  .alias_from_alu(alias_from_alu),
+  .result_from_alu(result_from_alu),
+
+  .lsb_has_result(lsb_has_result),  // lsb cdb
+  .alias_from_lsb(alias_from_lsb),
+  .result_from_lsb(result_from_lsb)
 );
 
 // rs & alu
 wire [`OPCODE_TYPE] opetype_rs_alu;
 wire [`ROB_ID_RANGE] rd_2alu;
 wire [`DATA_IDX_RANGE] pc_rs_alu, Vi_rs_alu, Vj_rs_alu, imm_rs_alu;
-
-// alu CDB
-wire alu_has_result;
-wire [`ROB_ID_RANGE] alias_from_alu;
-wire [`DATA_IDX_RANGE] result_from_alu;
-
-// LSB CDB
-wire lsb_has_result;
-wire [`ROB_ID_RANGE] alias_from_lsb;
-wire [`DATA_IDX_RANGE] result_from_lsb;
 
 ReserveStation RS (
   .clk(clk_in),

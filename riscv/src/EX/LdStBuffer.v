@@ -68,19 +68,21 @@ wire [ADDR_BITS - 1 : 0] next_head = (head == 2 ** ADDR_BITS - 1) ? 0 : head + 1
 wire [ADDR_BITS - 1 : 0] next_tail = (tail == 2 ** ADDR_BITS - 1) ? 0 : tail + 1;
 // ================
 
-
 // ==== ISSUE =====
-wire [`ROB_ID_RANGE] Qi_2queue, Qj_2queue;
+wire [`ROB_ID_RANGE]   Qi_2queue, Qj_2queue;
 wire [`DATA_IDX_RANGE] Vi_2queue, Vj_2queue;
 
-wire checkQi = (alu_has_result && alias_from_alu == Qi_from_is);
-wire checkQj = (alu_has_result && alias_from_alu == Qj_from_is);
+wire checkQi_from_lsb = (lsb_has_result && alias_from_lsb == Qi_from_is);
+wire checkQi_from_alu = (alu_has_result && alias_from_alu == Qi_from_is);
 
-assign Qi_2queue = checkQi ? `RENAMED_ZERO : Qi_from_is;
-assign Qj_2queue = checkQj ? `RENAMED_ZERO : Qj_from_is;
+wire checkQj_from_lsb = (lsb_has_result && alias_from_lsb == Qj_from_is);
+wire checkQj_from_alu = (alu_has_result && alias_from_alu == Qj_from_is);
 
-assign Vi_2queue = checkQi ? result_from_alu : Vi_from_is;
-assign Vj_2queue = checkQj ? result_from_alu : Vj_from_is; 
+assign Qi_2queue = checkQi_from_lsb ? `RENAMED_ZERO : (checkQi_from_alu ? `RENAMED_ZERO : Qi_from_is);
+assign Qj_2queue = checkQj_from_lsb ? `RENAMED_ZERO : (checkQj_from_alu ? `RENAMED_ZERO : Qj_from_is);
+
+assign Vi_2queue = checkQi_from_lsb ? result_from_lsb : (checkQi_from_alu ? result_from_alu : Vi_from_is);
+assign Vj_2queue = checkQj_from_lsb ? result_from_lsb : (checkQj_from_alu ? result_from_alu : Vj_from_is); 
 // ================
 
 // ==== EX part ====
@@ -142,9 +144,9 @@ always @(posedge clk) begin
 
      // use ALU's result to update RS
     if (alu_has_result) begin
-`ifdef Debug
-      $fdisplay(outfile, "time = %d, ALU's alias = %d\n", $time, alias_from_alu);
-`endif
+// `ifdef Debug
+//       $fdisplay(outfile, "time = %d, ALU's alias = %d\n", $time, alias_from_alu);
+// `endif
       for (i = 0; i < (2 ** ADDR_BITS); i = i + 1) begin // TODO: 感觉这里会更新一些空的entry
         if (Qi[i] == alias_from_alu) begin
           Qi[i]   <= `RENAMED_ZERO;
@@ -232,7 +234,10 @@ always @(posedge clk) begin
         counter   <= counter  + `ONE;
 
 `ifdef Debug
+      if (counter > 0) begin
           $fdisplay(outfile, "time = %d, load || address = %x, data acquired : %x\n", $time, addr_2mc, data_from_mc);
+      end
+
 `endif
         if (counter == totByte) begin
           lsb_has_result<= `TRUE;
@@ -270,11 +275,11 @@ always @(posedge clk) begin
 
 `ifdef Debug
         if (counter == 0)
-          $fdisplay(outfile, "time = %d, store || address = %x, lsb_has_result : %x\n", $time, addr_2mc + 1, data_written[15:8]);
+          $fdisplay(outfile, "time = %d, store || address = %x, data acquired : %x\n", $time, addr_2mc + 1, data_written[15:8]);
         if (counter == 1)
-          $fdisplay(outfile, "time = %d, store || address = %x, lsb_has_result : %x\n", $time, addr_2mc + 1, data_written[23:16]);
+          $fdisplay(outfile, "time = %d, store || address = %x, data acquired : %x\n", $time, addr_2mc + 1, data_written[23:16]);
         if (counter == 2)
-          $fdisplay(outfile, "time = %d, store || address = %x, lsb_has_result : %x\n", $time, addr_2mc + 1, data_written[31:24]);
+          $fdisplay(outfile, "time = %d, store || address = %x, data acquired : %x\n", $time, addr_2mc + 1, data_written[31:24]);
 `endif
 
         if (counter >= totByte - 2) begin
