@@ -162,9 +162,6 @@ always @(posedge clk) begin
         end
       end
     end
-// `ifdef Debug
-//       $fdisplay(outfile, "time = %d, LSB's status = %d, ready = %d\n", $time, status, ready);
-// `endif
 
     if (status == `NORM) begin
       
@@ -177,6 +174,9 @@ always @(posedge clk) begin
         ena_mc          <= `TRUE;
         optype_2mc      <= optype[head];
         addr_2mc        <= rs1 + imm;
+`ifdef Debug
+      $fdisplay(outfile, "time = %d, optype = %d, address = %x\n", $time, optype[head], rs1 + imm);
+`endif
 
         case (optype[head]) 
           `OPTYPE_LB, `OPTYPE_LBU: begin

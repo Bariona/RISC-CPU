@@ -71,17 +71,18 @@ always @(posedge clk) begin
         if (wr_from_lsb) begin
           status      <= `STROE;
           ram_ena     <= `FALSE;
-          wr_mc2ram     <= `LOAD_MEM;
-          
+          wr_mc2ram   <= `LOAD_MEM;
+          addr_2ram   <= `ZERO;
         end
         else begin
           status      <= `LOAD;
           data_2lsb   <= `ZERO;
           ram_ena     <= `TRUE;
           wr_mc2ram   <= `LOAD_MEM;
+          addr_2ram     <= addr_from_lsb;
         end
         counter       <= `ZERO;
-        addr_2ram     <= addr_from_lsb;
+        
       end
       else if (fet_ena) begin
         ram_ena       <= `TRUE;
@@ -133,9 +134,8 @@ always @(posedge clk) begin
       //   $display("store time = %d, data = %d", $time, data_2ram);
       // end
 
-      if (counter > 0)  // TODO: OPTIMIZE strucutre
-        addr_2ram   <= addr_2ram + `ONE;
-
+      addr_2ram   <= (counter == 0) ? addr_from_lsb : addr_2ram + `ONE;
+      
       if (counter <= totByte - 1) begin
         counter     <= counter + `ONE;
         ram_ena     <= `TRUE;

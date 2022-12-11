@@ -116,8 +116,8 @@ always @(posedge clk) begin
     //   $fdisplay(outfile, "time = %d, ---- ROB is full ----", $time);
     // end
 
-`ifndef Debug
-    $fdisplay(outfile, "pc = %x", pc[head]);
+`ifdef Debug
+    // $fdisplay(outfile, "pc = %x", pc[head]);
     // $fdisplay(outfile, "time = %d, pc = %x, optype = %d", $time, pc[head], optype[head]);
 `endif
     

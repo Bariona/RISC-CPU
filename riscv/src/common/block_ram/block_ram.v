@@ -76,15 +76,15 @@ reg [DATA_WIDTH-1:0] ram [2**ADDR_WIDTH-1:0];
 reg [ADDR_WIDTH-1:0] q_addr_a;
 
 
-  integer outfile;
-  initial begin
-    outfile = $fopen("ram.out");
-  end
+  // integer outfile;
+  // initial begin
+  //   outfile = $fopen("ram.out");
+  // end
 
 always @(posedge clk)
   begin
     if (we) begin
-      $fdisplay(outfile, "time = %d, address = %x, data = %x", $time, addr_a, din_a);
+      // $fdisplay(outfile, "time = %d, address = %x, data = %x", $time, addr_a, din_a);
       ram[addr_a] <= din_a;
     end
     q_addr_a <= addr_a;
