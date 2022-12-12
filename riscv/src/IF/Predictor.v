@@ -1,8 +1,8 @@
 `include "const.v"
 
-`define MAP_IDX 11:0
+`define MAP_IDX 9:2
 
-`define PREDICTOR_SIZE 12'hFFF
+`define PREDICTOR_SIZE 8'hFF
 
 // Two-way branch predictor
 module Predictor (

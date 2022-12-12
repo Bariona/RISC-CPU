@@ -11,12 +11,18 @@
 `define STORE_MEM         1'b1
 
 // i$ relevant
-`define ICACHE_ENTRY            256
+`define ICACHE_ENTRY            128
 `define ICACHE_BLOCK_RANGE    127:0  // each entry with 4 instructions
-`define ICACHE_TAG_RANGE       31:12
-`define ICACHE_IDX_RANGE       11:4
+`define ICACHE_TAG_RANGE       31:11
+`define ICACHE_IDX_RANGE       10:4
 `define INSTR_RANGE             3:2
 `define INSTR_PER_BYTE           4
+
+`define BLOCK_INS_CNT          32'h4
+`define INS_00                 31:0
+`define INS_01                 63:32
+`define INS_10                 95:64
+`define INS_11                127:96
 
 // index range
 `define ADDR_IDX          16:0

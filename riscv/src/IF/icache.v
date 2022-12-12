@@ -1,13 +1,7 @@
 `include "const.v"
 
-`define VALID                  1'b1
-`define STALL                  1'b0
-
-`define BLOCK_INS_CNT          32'h4
-`define INS_00                 31:0
-`define INS_01                 63:32
-`define INS_10                 95:64
-`define INS_11                127:96
+`define VALID 1'b1
+`define STALL 1'b0
 
 module ICACHE (
   input wire clk,
@@ -31,12 +25,12 @@ module ICACHE (
 reg status;
 reg [`DATA_IDX_RANGE] counter;
 
-reg valid[`ICACHE_ENTRY - 1 : 0];
+reg [`ICACHE_ENTRY - 1 : 0] valid;
 reg [`ICACHE_TAG_RANGE]   icache_tag  [`ICACHE_ENTRY - 1 : 0];
 reg [`ICACHE_BLOCK_RANGE] icache_store[`ICACHE_ENTRY - 1 : 0];
 
 wire[`ICACHE_IDX_RANGE] idx = pc[`ICACHE_IDX_RANGE];
-wire      hit       = (rdy_from_fet) ? (valid[idx] && icache_tag[idx] == pc[`ICACHE_TAG_RANGE]) : `TRUE;
+wire  hit = (rdy_from_fet) ? (valid[idx] && icache_tag[idx] == pc[`ICACHE_TAG_RANGE]) : `TRUE;
 
 wire[1:0] addr_ins  = pc[`INSTR_RANGE];
 assign    instr     = (addr_ins[1]) ? (addr_ins[0] ? icache_store[idx][`INS_11] : icache_store[idx][`INS_10]) : 

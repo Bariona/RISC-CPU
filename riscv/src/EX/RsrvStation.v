@@ -59,22 +59,22 @@ wire [`RS_IDX_RANGE] ex_entry_idx;
 
 assign rs_full = (avail_entry == `RS_SIZE);
 
-assign avail_entry = (!busy[0] ? 0 : 
-                        (!busy[1] ? 1 : 
-                          (!busy[2] ? 2 : 
-                            (!busy[3] ? 3 : 
-                              (!busy[4] ? 4 : 
-                                (!busy[5] ? 5 : 
-                                  (!busy[6] ? 6 :
-                                    (!busy[7] ? 7 :
-                                      (!busy[8] ? 8 :
-                                        (!busy[9] ? 9 :
-                                          (!busy[10] ? 10 :
-                                            (!busy[11] ? 11 :
-                                              (!busy[12] ? 12 :
-                                                (!busy[13] ? 13 :
-                                                  (!busy[14] ? 14 :
-                                                    (!busy[15] ? 15 : 16
+assign avail_entry = (~busy[0] ? 0 : 
+                        (~busy[1] ? 1 : 
+                          (~busy[2] ? 2 : 
+                            (~busy[3] ? 3 : 
+                              (~busy[4] ? 4 : 
+                                (~busy[5] ? 5 : 
+                                  (~busy[6] ? 6 :
+                                    (~busy[7] ? 7 :
+                                      (~busy[8] ? 8 :
+                                        (~busy[9] ? 9 :
+                                          (~busy[10] ? 10 :
+                                            (~busy[11] ? 11 :
+                                              (~busy[12] ? 12 :
+                                                (~busy[13] ? 13 :
+                                                  (~busy[14] ? 14 :
+                                                    (~busy[15] ? 15 : 16
                                                     ))))))))))))))));
 
 
@@ -186,30 +186,26 @@ always @(posedge clk) begin
     // update RS 
     if (alu_has_result) begin
       for (i = 0; i < `RS_SIZE; i = i + 1) begin
-        if (busy[i]) begin // TODO: 感觉busy可以直接去掉
-          if (Qi[i] == alias_from_alu) begin
-            Qi[i]   <= `RENAMED_ZERO;
-            Vi[i]   <= result_from_alu;
-          end
-          if (Qj[i] == alias_from_alu) begin
-            Qj[i]   <= `RENAMED_ZERO;
-            Vj[i]   <= result_from_alu;
-          end
+        if (Qi[i] == alias_from_alu) begin
+          Qi[i]   <= `RENAMED_ZERO;
+          Vi[i]   <= result_from_alu;
+        end
+        if (Qj[i] == alias_from_alu) begin
+          Qj[i]   <= `RENAMED_ZERO;
+          Vj[i]   <= result_from_alu;
         end
       end
     end
 
     if (lsb_has_result) begin
       for (i = 0; i < `RS_SIZE; i = i + 1) begin
-        if (busy[i]) begin // TODO: 感觉busy可以直接去掉
-          if (Qi[i] == alias_from_lsb) begin
-            Qi[i]   <= `RENAMED_ZERO;
-            Vi[i]   <= result_from_lsb;
-          end
-          if (Qj[i] == alias_from_lsb) begin
-            Qj[i]   <= `RENAMED_ZERO;
-            Vj[i]   <= result_from_lsb;
-          end
+        if (Qi[i] == alias_from_lsb) begin
+          Qi[i]   <= `RENAMED_ZERO;
+          Vi[i]   <= result_from_lsb;
+        end
+        if (Qj[i] == alias_from_lsb) begin
+          Qj[i]   <= `RENAMED_ZERO;
+          Vj[i]   <= result_from_lsb;
         end
       end
     end

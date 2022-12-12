@@ -32,6 +32,7 @@ module ROB (
 
   // port with LSB
   output wire store_prepared_to_commit,
+  output wire [`ROB_ID_RANGE] store_alias_2lsb,
 
   // ALU's cdb result
   input wire alu_has_result,
@@ -83,6 +84,7 @@ assign Vj_2dsp        = val[Qj_query_from_dsp];
 
 // lsb
 assign store_prepared_to_commit = (~rob_empty) && (optype[head] >= `OPTYPE_SB && optype[head] <= `OPTYPE_SW);
+assign store_alias_2lsb         = head;
 
 integer i;
 
@@ -117,7 +119,7 @@ always @(posedge clk) begin
     // end
 
 `ifdef Debug
-    // $fdisplay(outfile, "pc = %x", pc[head]);
+    $fdisplay(outfile, "pc = %x", pc[head]);
     // $fdisplay(outfile, "time = %d, pc = %x, optype = %d", $time, pc[head], optype[head]);
 `endif
     

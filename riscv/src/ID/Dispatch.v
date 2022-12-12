@@ -62,6 +62,7 @@ module Dispatcher (
   output reg ena_lsb,
   output reg [`ROB_ID_RANGE]   rd_alias_2lsb,
   output reg [`OPCODE_TYPE]    optype_2lsb,
+  output reg [`DATA_IDX_RANGE] pc_2lsb,
   output reg [`ROB_ID_RANGE]   Qi_2lsb,
   output reg [`ROB_ID_RANGE]   Qj_2lsb,
   output reg [`DATA_IDX_RANGE] Vi_2lsb,
@@ -144,13 +145,7 @@ always @(posedge clk) begin
 
   else if (valid_from_fet && ~is_full) begin
     // rename register file
-    if (instr_from_fet == 32'hff00513) begin
-      $display("time to end: %d\n", $time);
-    end
-`ifdef Debug
-    $fdisplay(outfile, "time = %d, pc = %x, instruction = %x", $time, pc_from_fet, instr_from_fet);
-    $fdisplay(outfile, "optype = %d, alu: %d, lsb: %d, Qi = %d, Qj = %d, Vi = %d, Vj = %d\n", optype, alu_has_result, lsb_has_result, Qi, Qj, Vi, Vj);
-`endif
+    
 
     ena_regfile_rename  <= `TRUE;
     rd_2reg         <= rd;
@@ -167,9 +162,13 @@ always @(posedge clk) begin
     if (is_ls) begin // to LoadStoreBuffer
       ena_lsb   <= `TRUE;
       ena_rs    <= `FALSE;
-
+`ifdef Debug
+    $fdisplay(outfile, "time = %d, pc = %x, instruction = %x", $time, pc_from_fet, instr_from_fet);
+    $fdisplay(outfile, "instr = %x, optype = %d, alu: %d, lsb: %d, Qi = %d, Qj = %d, Vi = %d, Vj = %d\n", instr_from_fet, optype, alu_has_result, lsb_has_result, Qi, Qj, Vi, Vj);
+`endif
       optype_2lsb   <= optype;
       rd_alias_2lsb <= id_from_rob;
+      pc_2lsb   <= pc_from_fet;
       Qi_2lsb   <= Qi;
       Qj_2lsb   <= Qj;
       Vi_2lsb   <= Vi;

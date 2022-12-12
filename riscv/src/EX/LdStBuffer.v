@@ -16,11 +16,13 @@ module LoadStoreBuffer
 
   // port with ROB
   input wire prepared_to_commit,
+  input wire [`ROB_ID_RANGE] store_commit_alias,
 
   // port with dispatcher
   output wire lsb_full,
 
   input wire rdy_from_is,
+  input wire [`DATA_IDX_RANGE] pc_from_dsp,
   input wire [`OPCODE_TYPE]    optype_from_is,
   input wire [`ROB_ID_RANGE]   rd_alias_from_is,
   input wire [`ROB_ID_RANGE]   Qi_from_is,
@@ -87,7 +89,7 @@ assign Vj_2queue = checkQj_from_lsb ? data_from_mc : (checkQj_from_alu ? result_
 // ================
 
 // ==== EX part ====
-wire check = (optype[head] >= `OPTYPE_SB && optype[head] <= `OPTYPE_SW) ? prepared_to_commit : `TRUE;
+wire check = (optype[head] >= `OPTYPE_SB && optype[head] <= `OPTYPE_SW) ? (prepared_to_commit && ID[head] == store_commit_alias) : `TRUE;
 wire ready = (head != tail) && (!Qi[head] && !Qj[head] && check);
 
 wire [`DATA_IDX_RANGE] rs1, rs2, imm;
@@ -129,11 +131,11 @@ always @(posedge clk) begin
 // `ifdef Debug
 //       $fdisplay(outfile, "time = %d, LSB's status = %d\nhead = %d, tail = %d\nQi = %d, Qj = %d\n", $time, status, head, tail, Qi[head], Qj[head]);
 // `endif
-    if (rdy_from_is && !lsb_full) begin // TODO: is_full?
+    if (rdy_from_is) begin // TODO: is_full?
 
 // `ifdef Debug
-//       $fdisplay(outfile, "time = %d, add instrution (%d)\nhead = %d, optype = %d\nVi = %x, Vj = %x, Qi = %d, Qj = %d\n", 
-//                         $time, tail, head, optype_from_is, Vi_2queue, Vj_2queue, Qi_2queue, Qj_2queue);
+//       $fdisplay(outfile, "time = %d, pc = %x, add instrution (%d)\nhead = %d, optype = %d\nVi = %x, Vj = %x, Qi = %d, Qj = %d\n", 
+//                         $time, pc_from_dsp, tail, head, optype_from_is, Vi_from_is, Vj_2queue, Qi_2queue, Qj_2queue);
 // `endif
       tail          <= next_tail;
 
@@ -175,7 +177,7 @@ always @(posedge clk) begin
         optype_2mc      <= optype[head];
         addr_2mc        <= rs1 + imm;
 `ifdef Debug
-      $fdisplay(outfile, "time = %d, optype = %d, address = %x\n", $time, optype[head], rs1 + imm);
+      $fdisplay(outfile, "time = %d, optype = %d, address = %x, data = %d\n", $time, optype[head], rs1 + imm, rs2);
 `endif
 
         case (optype[head]) 
@@ -233,7 +235,7 @@ always @(posedge clk) begin
         lsb_has_result  <= `TRUE;
         result_from_lsb <= data_from_mc;
         
-        for (i = 0; i < (2**ADDR_BITS); i = i + 1) begin // TODO: 感觉这里会更新一些空的entry
+        for (i = 0; i < (2**ADDR_BITS); i = i + 1) begin
           if (Qi[i] == alias_from_lsb) begin
             Qi[i]   <= `RENAMED_ZERO;
             Vi[i]   <= data_from_mc;

@@ -184,7 +184,7 @@ wire [`DATA_IDX_RANGE] pc_dsp_rs, Vi_dsp_rs, Vj_dsp_rs, imm_dsp_rs;
 wire ena_dsp_lsb;
 wire [`ROB_ID_RANGE] rd_alias_dsp_lsb, Qi_dsp_lsb, Qj_dsp_lsb;
 wire [`OPCODE_TYPE] optype_dsp_lsb;
-wire [`DATA_IDX_RANGE] Vi_dsp_lsb, Vj_dsp_lsb, imm_dsp_lsb;
+wire [`DATA_IDX_RANGE] Vi_dsp_lsb, Vj_dsp_lsb, imm_dsp_lsb, pc_dsp_lsb;
 
 // alu CDB
 wire alu_has_result;
@@ -247,6 +247,7 @@ Dispatcher dispatcher (
   .imm_2rs(imm_dsp_rs),
 
   .ena_lsb(ena_dsp_lsb), // LSB
+  .pc_2lsb(pc_dsp_lsb),
   .rd_alias_2lsb(rd_alias_dsp_lsb),
   .optype_2lsb(optype_dsp_lsb),
   .Qi_2lsb(Qi_dsp_lsb),
@@ -324,6 +325,7 @@ ALU alu (
 );
 
 wire prepared_to_commit;
+wire [`ROB_ID_RANGE] store_alias_2lsb;
 
 LoadStoreBuffer #(.ADDR_BITS(4)) LSB (
   .clk(clk_in),
@@ -331,10 +333,12 @@ LoadStoreBuffer #(.ADDR_BITS(4)) LSB (
   .rdy(rdy_in),
 
   .prepared_to_commit(prepared_to_commit),
+  .store_commit_alias(store_alias_2lsb),
 
   .lsb_full(lsb_full),
 
   .rdy_from_is(ena_dsp_lsb), // dsp
+  .pc_from_dsp(pc_dsp_lsb),
   .optype_from_is(optype_dsp_lsb),
   .rd_alias_from_is(rd_alias_dsp_lsb),
   .Qi_from_is(Qi_dsp_lsb),
@@ -398,7 +402,8 @@ ROB rob (
   .Vj_2dsp(Vj_rob_2dsp),
 
   .store_prepared_to_commit(prepared_to_commit),
-
+  .store_alias_2lsb(store_alias_2lsb),
+  
   .alu_has_result(alu_has_result), // alu
   .alias_from_alu(alias_from_alu),
   .result_from_alu(result_from_alu),

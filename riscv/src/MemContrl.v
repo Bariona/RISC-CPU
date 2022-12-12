@@ -47,6 +47,12 @@ reg [`DATA_IDX_RANGE] counter;
 //   $display("status is %d at %t", valid_2icache, $realtime);
 //   # 40; $display("status is %d at %t", valid_2icache, $time);
 // end
+`ifdef Debug
+  integer outfile;
+  initial begin
+    outfile = $fopen("mc.out");
+  end
+`endif 
 
 always @(posedge clk) begin
   if (rst) begin
@@ -135,7 +141,13 @@ always @(posedge clk) begin
       // end
 
       addr_2ram   <= (counter == 0) ? addr_from_lsb : addr_2ram + `ONE;
-      
+
+`ifdef Debug
+      if (addr_from_lsb == 32'h30000) begin
+        $fdisplay(outfile, "time = %d, data = %d\n", $time, data_from_lsb[7:0]);
+      end
+`endif
+
       if (counter <= totByte - 1) begin
         counter     <= counter + `ONE;
         ram_ena     <= `TRUE;

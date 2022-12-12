@@ -46,10 +46,10 @@ wire checkRename = (regalias_from_rob == regAlias[regidx_from_rob]) &&
                           (~ena_reg_rename || (ena_reg_rename && target_reg != regidx_from_rob));
 integer i;
 
-integer outfile;
-initial begin
-  outfile = $fopen("regfile.out");
-end
+// integer outfile;
+// initial begin
+//   outfile = $fopen("regfile.out");
+// end
 
 always @(posedge clk) begin
   if (rst) begin
@@ -81,8 +81,6 @@ always @(posedge clk) begin
     //   $fdisplay(outfile, "reg[%x] = %x, reg[%d] = %x ", i, register[i], i + 1, register[i + 1]);
     // end
 `endif
-      if (regidx_from_rob == 10) 
-        $fdisplay(outfile, "time = %d, reg[10] = %d\n", $time, result_from_rob);
       register[regidx_from_rob]   <= result_from_rob;
       if (checkRename) begin
         regAlias[regidx_from_rob] <= `RENAMED_ZERO;
