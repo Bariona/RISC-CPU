@@ -99,6 +99,7 @@ initial begin
     ram[i] = 0;
   end
   $readmemh("/mnt/c/Users/huawei/Desktop/RISC-CPU/riscv/testspace/test.data", ram); // add test.data to vivado project or specify a valid file path
+  // $readmemh("C:/Users/huawei/Desktop/RISC-CPU/riscv/testspace/test.data", ram); // add test.data to vivado project or specify a valid file path
 end
 
 endmodule

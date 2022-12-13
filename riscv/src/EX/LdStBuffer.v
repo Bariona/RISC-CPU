@@ -1,9 +1,9 @@
 `include "const.v"
 
-`define NORM    3'b000
-`define LOADING 3'b001
-`define STORING 3'b010
-`define RBACK   3'b111
+`define LSB_NORM    3'b000
+`define LOADING     3'b001
+`define STORING     3'b010
+`define LSB_RBACK   3'b111
 // `define UPDATE  3'b111
 
 module LoadStoreBuffer 
@@ -89,7 +89,8 @@ assign Vj_2queue = checkQj_from_lsb ? data_from_mc : (checkQj_from_alu ? result_
 // ================
 
 // ==== EX part ====
-wire check = (optype[head] >= `OPTYPE_SB && optype[head] <= `OPTYPE_SW) ? (prepared_to_commit && ID[head] == store_commit_alias) : `TRUE;
+wire check = (optype[head] >= `OPTYPE_SB && optype[head] <= `OPTYPE_SW) ? 
+                  (prepared_to_commit && ID[head] == store_commit_alias) : `TRUE;
 wire ready = (head != tail) && (!Qi[head] && !Qj[head] && check);
 
 wire [`DATA_IDX_RANGE] rs1, rs2, imm;
@@ -111,7 +112,7 @@ integer i;
 
 always @(posedge clk) begin
   if (rst) begin
-    status     <= `NORM;
+    status     <= `LSB_NORM;
     ena_mc     <= `FALSE;
     head       <= 0;
     tail       <= 0;
@@ -122,7 +123,7 @@ always @(posedge clk) begin
   else if (~rdy) begin // pause
   end
   else if (rollback_signal) begin
-    status  <= (status == `LOADING) ? `RBACK : `NORM;
+    status  <= (status == `LOADING) ? `LSB_RBACK : `LSB_NORM;
     head    <= 0;
     tail    <= 0;
   end
@@ -165,7 +166,7 @@ always @(posedge clk) begin
       end
     end
 
-    if (status == `NORM) begin
+    if (status == `LSB_NORM) begin
       
       lsb_has_result  <= `FALSE;
 
@@ -230,7 +231,7 @@ always @(posedge clk) begin
     else if (status == `LOADING) begin
       if (rdy_from_mc) begin
         ena_mc  <= `FALSE;
-        status  <= `NORM;
+        status  <= `LSB_NORM;
         totByte <= 0;
         lsb_has_result  <= `TRUE;
         result_from_lsb <= data_from_mc;
@@ -257,7 +258,7 @@ always @(posedge clk) begin
       if (rdy_from_mc) begin
         ena_mc  <= `FALSE;
         wr_2mc  <= `FALSE;
-        status  <= `NORM;
+        status  <= `LSB_NORM;
 
         totByte <= 0;
         lsb_has_result  <= `TRUE;
@@ -273,9 +274,9 @@ always @(posedge clk) begin
 
       end
     end
-    else if (status == `RBACK) begin
+    else if (status == `LSB_RBACK) begin
       if (rdy_from_mc) begin
-        status          <= `NORM;
+        status          <= `LSB_NORM;
         ena_mc          <= `FALSE;
         lsb_has_result  <= `FALSE;
         totByte         <= 0;

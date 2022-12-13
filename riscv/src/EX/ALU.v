@@ -27,7 +27,9 @@ always @(*) begin
   has_result  = (optype != `NOP);
   rd_alias    = rd_alias_from_rs;
   if_jump     = `FALSE;
-  
+  result      = `ZERO;
+  target_pc   = `ZERO;
+
   case (optype)
     `OPTYPE_LUI:   result = imm;
     `OPTYPE_AUIPC: result = pc + imm;
@@ -41,11 +43,9 @@ always @(*) begin
     `OPTYPE_JALR: begin
       if_jump   = `TRUE;
       result    = pc + 4;
-      target_pc = (rs1 + imm) & ~1;
-    
+      target_pc = (rs1 + imm) & ~1;    
     end
 
-    
     `OPTYPE_BEQ: begin
       if_jump   = rs1 == rs2;
       target_pc = pc + imm;

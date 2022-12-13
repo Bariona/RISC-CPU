@@ -1,8 +1,8 @@
 `include "const.v"
 
-`define FETCH 2'b01
-`define HOLD  2'b00
-`define RBACK 2'b11
+`define INS_FETCH 2'b01
+`define INS_HOLD  2'b00
+`define INS_RBACK 2'b11
 
 module InsFetcher(
   input wire clk, 
@@ -47,7 +47,7 @@ always @(posedge clk) begin
   if (rst) begin 
     rdy_to_fetch  <= `FALSE;
     valid_2dsp    <= `FALSE;
-    status      <= `HOLD;
+    status      <= `INS_HOLD;
     pc          <= `ZERO;
     pc_2icache  <= `ZERO;
     pc_2dsp     <= `ZERO;
@@ -61,24 +61,24 @@ always @(posedge clk) begin
     // pc_2icache    <= `ZERO; 
     // rdy_to_fetch  <= `FALSE;
     // you can't suddenly change pc_2icache/rdy_to_fetch, 
-    // it's will affect i$'s hit result, and then leads `RBACK to immediately detect instr_valid = 1 -> status changed
+    // it's will affect i$'s hit result, and then leads `INS_RBACK to immediately detect instr_valid = 1 -> status changed
 
     pc_2dsp       <= `ZERO;
-    status        <= (status == `FETCH) ? `RBACK : `HOLD;
+    status        <= (status == `INS_FETCH) ? `INS_RBACK : `INS_HOLD;
     
     valid_2dsp    <= `FALSE;
   end
 
   else begin
-    if (status == `RBACK) begin
+    if (status == `INS_RBACK) begin
       if (instr_valid) begin
-        status        <= `HOLD;
+        status        <= `INS_HOLD;
         rdy_to_fetch  <= `FALSE;
       end
     end
-    else if (status == `FETCH && ~is_full) begin
+    else if (status == `INS_FETCH && ~is_full) begin
       if (instr_valid) begin
-        status  <= `HOLD;
+        status  <= `INS_HOLD;
         pc      <= next_pc;
 
         // to dispatcher
@@ -89,7 +89,7 @@ always @(posedge clk) begin
         rdy_to_fetch <= `FALSE;
       end
     end
-    else if (status == `HOLD) begin
+    else if (status == `INS_HOLD) begin
       // valid_2dsp      <= `FALSE; // TODO: check where to place valid_2dsp
       // instr_2dsp      <= `ZERO;
       // pc_2dsp         <= `ZERO;
@@ -100,7 +100,7 @@ always @(posedge clk) begin
         pc_2dsp       <= `ZERO;
 
         rdy_to_fetch  <= `TRUE;
-        status        <= `FETCH;
+        status        <= `INS_FETCH;
         pc_2icache    <= pc;
       end
       else begin

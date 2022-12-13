@@ -1,0 +1,20 @@
+RAM size: 1c88
+13 01 01 fc 23 2a 91 02 23 2e 71 01 23 2e 11 02 
+23 2c 81 02 23 28 21 03 23 26 31 03 23 24 41 03 
+23 22 51 03 23 20 61 03 93 04 05 00 93 0b 00 00 
+63 56 05 00 b3 04 a0 40 93 0b 10 00 93 09 00 00 
+input file not found, skipping
+initialized UART port on: /dev/ttyS5
+55 41 52 54 
+55 41 52 54 
+uploading RAM: 1c88 blks:8
+blk:0 ofs:0000
+blk:1 ofs:0400
+blk:2 ofs:0800
+blk:3 ofs:0c00
+blk:4 ofs:1000
+blk:5 ofs:1400
+blk:6 ofs:1800
+blk:7 ofs:1c00
+RAM uploaded
+Enter r to run, q to quit, p to get cpu PC(demo

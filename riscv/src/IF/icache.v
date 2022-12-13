@@ -1,7 +1,7 @@
 `include "const.v"
 
-`define VALID 1'b1
-`define STALL 1'b0
+`define IC_VALID 1'b1
+`define IC_STALL 1'b0
 
 module ICACHE (
   input wire clk,
@@ -42,7 +42,7 @@ assign instr_valid  =  hit;
 integer i;
 always @(posedge clk) begin
   if (rst) begin      // clear
-    status        <= `VALID;
+    status        <= `IC_VALID;
     counter       <= `ZERO;
     addr          <= `ZERO;
     mc_ena        <= `FALSE;
@@ -58,11 +58,11 @@ always @(posedge clk) begin
   else begin
      //if (rdy_from_fet) begin
       if (hit) begin
-        status      <= `VALID;
+        status      <= `IC_VALID;
         mc_ena      <= `FALSE;
       end
-      else if (status == `VALID) begin          // fill the block(i.e. entry)
-        status          <= `STALL;
+      else if (status == `IC_VALID) begin          // fill the block(i.e. entry)
+        status          <= `IC_STALL;
         mc_ena          <= `TRUE;
         counter         <= `ONE;                // not zero ?
 
@@ -84,7 +84,7 @@ always @(posedge clk) begin
             addr          <= addr    +    4;    // next instruction
           end
           else begin
-            status        <= `VALID;
+            status        <= `IC_VALID;
             counter       <= `ZERO;
             valid[idx]    <= `TRUE;
             mc_ena        <= `FALSE;

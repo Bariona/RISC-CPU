@@ -4,8 +4,8 @@ import sys
 isWin = sys.platform[:3] == 'win'
 wslPrefix = 'ubuntu.exe run ' if isWin else ''
 
-test_cases_dir = './testcase'
-path_of_bit = 'C:/a.bit' # A Windows-style path is ok if you runs on Windows
+test_cases_dir = './testcase/fpga'
+path_of_bit = 'D:/fpga/project_6/project_6.runs/impl_1/riscv_top.bit' # A Windows-style path is ok if you runs on Windows
 excluded_test_cases = []
 
 color_red = "\033[0;31m"
@@ -15,7 +15,7 @@ color_none = "\033[0m"
 
 def program_device():
     os.system('vivado -nolog -nojournal -notrace -mode batch -source pd.tcl -tclarg ' + path_of_bit + ' > ' + ('NUL' if isWin else '/dev/null'))
-
+    
 def collect_test_cases():
     test_cases = []
     for f in os.listdir(test_cases_dir):

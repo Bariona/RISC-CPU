@@ -35,7 +35,9 @@ module MemController (
   output reg wr_mc2ram,              // write_or_read (write: 1 read: 0)
   output reg  [`DATA_IDX_RANGE] addr_2ram,
   output reg  [`MEM_IDX_RANGE]  data_2ram,
-  input  wire [`MEM_IDX_RANGE]  data_from_ram
+
+  input  wire [`MEM_IDX_RANGE]  data_from_ram,
+  input  wire uart_full_signal
 ); 
 
 reg [2:0] status;
@@ -126,7 +128,7 @@ always @(posedge clk) begin
         ram_ena       <= `FALSE;
       end
     end
-    else if (status == `STROE) begin
+    else if (status == `STROE && !uart_full_signal) begin
       wr_mc2ram   <= `STORE_MEM;
       case (counter)
         // cost 1 cycle to store mem.

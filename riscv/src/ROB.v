@@ -88,10 +88,12 @@ assign store_alias_2lsb         = head;
 
 integer i;
 
-integer outfile;
-initial begin
-  outfile = $fopen("test.out");
-end
+`ifdef Debug
+  integer outfile;
+  initial begin
+    outfile = $fopen("test.out");
+  end
+`endif
 
 always @(posedge clk) begin
   if (rst || rollback_signal) begin
@@ -140,13 +142,9 @@ always @(posedge clk) begin
       if (is_jump[head]) begin
         // branch instruction 
         ena_pred        <= `TRUE;
-        // res_rdy_2reg    <= `FALSE;
         commit_pc_2pred <= pc[head];
 
         if (jumpRecord[head] != jumpResult[head]) begin
-// `ifdef Debug
-//         $fdisplay(outfile, "")
-// `endif
           predict_res       <= `FALSE;
           rollback_signal   <= `TRUE;
           rollback_pc       <= jumpResult[head] ? jumpTakenPc[head] : pc[head] + 4;

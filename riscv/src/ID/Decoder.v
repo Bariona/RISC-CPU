@@ -21,14 +21,19 @@ always @(*) begin
   rd      = instr[`RD_IDX];
   rs1     = instr[`RS1_IDX];
   rs2     = instr[`RS2_IDX];
-
+  imm     = `ZERO;
+  optype  = `NOP;
+  
   is_ls   = (instrType == `S_TYPE || instrType == `L_TYPE);
   is_jump = `FALSE;
 
   case (instrType)
     `LUI_TYPE, `AUIPC_TYPE: begin
       imm     = {instr[31:12], 12'b0};
-      optype  = instr[5] ? `OPTYPE_LUI : `OPTYPE_AUIPC;
+      if (instrType == `LUI_TYPE) 
+        optype  = `OPTYPE_LUI;
+      else 
+        optype  = `OPTYPE_AUIPC;
     end
 
     `JAL_TYPE: begin
@@ -111,6 +116,12 @@ always @(*) begin
         3'b010: optype = `OPTYPE_SW;
       endcase
     end
+
+    default begin
+      imm     = `ZERO;
+      optype  = `NOP;
+    end
+      
   endcase
 
 end

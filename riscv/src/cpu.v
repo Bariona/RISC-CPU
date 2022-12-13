@@ -98,7 +98,9 @@ MemController MC (
   .wr_mc2ram(mem_wr),
   .addr_2ram(mem_a),
   .data_2ram(mem_dout),
-  .data_from_ram(mem_din)
+  
+  .data_from_ram(mem_din),
+  .uart_full_signal(io_buffer_full)
 );
 
 Predictor predictor (
