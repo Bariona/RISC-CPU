@@ -202,5 +202,4 @@ always @(posedge clk) begin
   end
 end
 
-// TODO: full signal -> fetcher
 endmodule

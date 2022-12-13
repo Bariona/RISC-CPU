@@ -95,10 +95,10 @@ assign Qj_2rob  = Qj_from_rg;
 // ==== ISSUE =====
 
 // check register File & ROB (not commited instuction)
-wire [`ROB_ID_RANGE]   Qi_tmp = (!Qi_from_rg) ? `RENAMED_ZERO : (rob_Qi_rdy ? `RENAMED_ZERO : Qi_from_rg);
-wire [`ROB_ID_RANGE]   Qj_tmp = (!Qj_from_rg) ? `RENAMED_ZERO : (rob_Qj_rdy ? `RENAMED_ZERO : Qj_from_rg);
-wire [`DATA_IDX_RANGE] Vi_tmp = (!Qi_from_rg) ? Vi_from_rg : (rob_Qi_rdy ? Vi_from_rob : `ZERO);
-wire [`DATA_IDX_RANGE] Vj_tmp = (!Qj_from_rg) ? Vj_from_rg : (rob_Qj_rdy ? Vj_from_rob : `ZERO);
+wire [`ROB_ID_RANGE]   Qi_tmp = rob_Qi_rdy ? `RENAMED_ZERO : Qi_from_rg;
+wire [`ROB_ID_RANGE]   Qj_tmp = rob_Qj_rdy ? `RENAMED_ZERO : Qj_from_rg;
+wire [`DATA_IDX_RANGE] Vi_tmp = rob_Qi_rdy ? Vi_from_rob : Vi_from_rg;
+wire [`DATA_IDX_RANGE] Vj_tmp = rob_Qj_rdy ? Vj_from_rob : Vj_from_rg;
 
 wire checkQi_from_lsb = (lsb_has_result && alias_from_lsb == Qi_tmp);
 wire checkQi_from_alu = (alu_has_result && alias_from_alu == Qi_tmp);

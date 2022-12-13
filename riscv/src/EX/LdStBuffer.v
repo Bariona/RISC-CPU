@@ -74,10 +74,10 @@ wire [ADDR_BITS - 1 : 0] next_tail = (tail == 2 ** ADDR_BITS - 1) ? 0 : tail + 1
 wire [`ROB_ID_RANGE] Qi_2queue, Qj_2queue;
 wire [`DATA_IDX_RANGE] Vi_2queue, Vj_2queue;
 
-wire checkQi_from_lsb = (rdy_from_mc && status != `RBACK && alias_from_lsb == Qi_from_is);
+wire checkQi_from_lsb = (rdy_from_mc && alias_from_lsb == Qi_from_is);
 wire checkQi_from_alu = (alu_has_result && alias_from_alu == Qi_from_is);
 
-wire checkQj_from_lsb = (rdy_from_mc && status != `RBACK && alias_from_lsb == Qj_from_is);
+wire checkQj_from_lsb = (rdy_from_mc && alias_from_lsb == Qj_from_is);
 wire checkQj_from_alu = (alu_has_result && alias_from_alu == Qj_from_is);
 
 assign Qi_2queue = checkQi_from_lsb ? `RENAMED_ZERO : (checkQi_from_alu ? `RENAMED_ZERO : Qi_from_is);

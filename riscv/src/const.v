@@ -1,4 +1,4 @@
-// `define Debug 
+`define Debug 
 // ↑ enable Debug mode
 
 // consts

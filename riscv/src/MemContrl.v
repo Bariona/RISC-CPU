@@ -135,10 +135,6 @@ always @(posedge clk) begin
         32'h2: data_2ram  <= data_from_lsb[23:16];
         32'h3: data_2ram  <= data_from_lsb[31:24];
       endcase
-      
-      // if (ram_ena && addr_2ram == 32'h1fffc) begin
-      //   $display("store time = %d, data = %d", $time, data_2ram);
-      // end
 
       addr_2ram   <= (counter == 0) ? addr_from_lsb : addr_2ram + `ONE;
 
@@ -173,9 +169,6 @@ always @(posedge clk) begin
       // if (counter > 0)  // TODO: OPTIMIZE strucutre
         addr_2ram   <= addr_2ram + `ONE;
 
-      // if (ram_ena && addr_2ram == 32'h1fffc) begin
-      //   $display("time = %d, data = %d", $time, data_from_ram);
-      // end
       if (counter <= totByte - 1) begin
         counter     <= counter   + `ONE;
       end
@@ -192,12 +185,6 @@ always @(posedge clk) begin
         end
         counter     <= `ZERO;
       end
-      // if (counter > `ZERO) begin
-      //   status        <= `NORM; // TODO: 这里可以加速, 多读一个unit
-      //   valid_2lsb    <= `TRUE;
-      //   data_2lsb     <= data_from_ram;
-      //   counter       <= `ZERO;
-      // end
     end
     else if (status == `LdStSTALL) begin // STALL
       status        <= `STALL;

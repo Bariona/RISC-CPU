@@ -1,31 +1,41 @@
 #include "io.h"
-int f[2801];
-int main() {
-	int a = 10000;
-	int b = 0;
-	int c = 2800;
-	int d = 0;
-	int e = 0;
-	int g = 0;
+// int a[4][11];
+// int i;
+// int j;
 
-	for (;b-c!=0;) 
-		f[b++] = a/5;
-	for (;; e = d%a){
-		d = 0;
-		g = c*2;
-		if (g==0) break;
-		
-		for (b=c;;d=d*b){
-			d=d+f[b]*a;
-			f[b] = d%--g;
-			d=d/g--;
-			if (--b==0) break;
-		}
-		
-		c = c-14;
-		outl(e+d/a); // should be printf("%04b"), but let it be
-	}
-	
-  print("\n");
-  return 0;
+// struct rec {
+//     int num;
+//     int c;
+// }b[5];
+
+// void printNum(int num) {
+//     outlln(num);
+// }
+int main() {
+    outlln(999);
+    outlln(1000);
+    // for (int i = 1; i < 10; ++i)
+    //     outlln(i*100);
+
+    // for (i = 0; i < 4; i ++) {
+    //     for (j = 0; j < 10; j ++)
+    //         a[i][j] = 888;
+    // }
+    // for (i = 0; i < 5; i ++) {
+    //     b[i].num = -1;
+    // }
+
+    // //printNum(a[3][9]);
+    // for (i = 0; i <= 3; i ++)
+    //     for (j = 0; j <= 9; j ++)
+    //         a[i][j] = i * 10 + j;
+
+    // for (i = 0; i <= 3; i ++)
+    //     for (j = 0; j <= 9; j ++);
+    //         //printNum(a[i][j]);
+   
+    // //printNum(b[0].num);
+    // printNum(b[1].num);
+    
+    return 0;
 }

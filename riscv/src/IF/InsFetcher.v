@@ -35,12 +35,8 @@ module InsFetcher(
   input  wire [`DATA_IDX_RANGE] rollback_pc
 ); 
 
-// 后续会有predict失败的roll_back
 reg [1:0] status;
 reg [`DATA_IDX_RANGE] pc;
-
-// assign rdy_to_fetch = ~is_full;
-// assign pc_2icache   = pc;
 
 // to predictor
 assign valid_2pred  = (instr_valid) ? `TRUE : `FALSE;
