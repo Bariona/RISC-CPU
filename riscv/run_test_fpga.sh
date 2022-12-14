@@ -8,6 +8,6 @@ if [ -f ./testcase/fpga/$@.ans ]; then cp ./testcase/fpga/$@.ans ./test/test.ans
 # add your own test script here
 # Example: assuming serial port on /dev/ttyUSB1
 ./ctrl/build.sh
-# ./ctrl/run.sh ./test/test.bin ./test/test.in /dev/ttyS5 -I
-./ctrl/run.sh ./test/test.bin ./test/test.in /dev/ttyS5 -T > ./test/test.out
+./ctrl/run.sh ./test/test.bin ./test/test.in /dev/ttyS5 -I
+# ./ctrl/run.sh ./test/test.bin ./test/test.in /dev/ttyS5 -T > ./test/test.out
 #if [ -f ./test/test.ans ]; then diff ./test/test.ans ./test/test.out; fi

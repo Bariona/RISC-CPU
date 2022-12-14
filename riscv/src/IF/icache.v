@@ -12,7 +12,8 @@ module ICACHE (
   input wire rdy_from_fet,
   input wire [`DATA_IDX_RANGE] pc,
   output wire instr_valid,
-  output wire [`DATA_IDX_RANGE] instr,
+  // output wire [`DATA_IDX_RANGE] instr,
+  output reg [`DATA_IDX_RANGE] instr,
 
   // port with mem_controller
   output reg  mc_ena,
@@ -29,15 +30,41 @@ reg [`ICACHE_ENTRY - 1 : 0] valid;
 reg [`ICACHE_TAG_RANGE]   icache_tag  [`ICACHE_ENTRY - 1 : 0];
 reg [`ICACHE_BLOCK_RANGE] icache_store[`ICACHE_ENTRY - 1 : 0];
 
-wire[`ICACHE_IDX_RANGE] idx = pc[`ICACHE_IDX_RANGE];
-wire  hit = (rdy_from_fet) ? (valid[idx] && icache_tag[idx] == pc[`ICACHE_TAG_RANGE]) : `TRUE;
+// wire[1:0] addr_ins  = pc[`INSTR_RANGE];
 
-wire[1:0] addr_ins  = pc[`INSTR_RANGE];
-assign    instr     = (addr_ins[1]) ? (addr_ins[0] ? icache_store[idx][`INS_11] : icache_store[idx][`INS_10]) : 
-                                  (addr_ins[0] ? icache_store[idx][`INS_01] : icache_store[idx][`INS_00]);
+// wire[`ICACHE_IDX_RANGE] idx = pc[`ICACHE_IDX_RANGE];
+// wire  hit = (rdy_from_fet) ? (valid[idx] && icache_tag[idx] == pc[`ICACHE_TAG_RANGE]) : `TRUE;
+
+// assign    instr     = (addr_ins[1]) ? (addr_ins[0] ? icache_store[idx][`INS_11] : icache_store[idx][`INS_10]) : 
+//                                   (addr_ins[0] ? icache_store[idx][`INS_01] : icache_store[idx][`INS_00]);
+
+reg [1:0] addr_ins;
+reg [`ICACHE_IDX_RANGE] idx;
+reg hit;
 
 assign instr_valid  =  hit;
 // assign mc_ena       = ~hit;
+
+always @(*) begin
+  addr_ins  = pc[`INSTR_RANGE];
+  idx       = pc[`ICACHE_IDX_RANGE];
+
+  if (rdy_from_fet) begin
+    hit = valid[idx] && icache_tag[idx] == pc[`ICACHE_TAG_RANGE];
+  end
+  else begin
+    hit = `TRUE;
+  end
+
+  case (addr_ins[1:0])
+    2'b00: instr = icache_store[idx][`INS_00];
+    2'b01: instr = icache_store[idx][`INS_01];
+    2'b10: instr = icache_store[idx][`INS_10];
+    default: instr = icache_store[idx][`INS_11];
+  endcase
+
+end
+
 
 integer i;
 always @(posedge clk) begin
@@ -68,7 +95,7 @@ always @(posedge clk) begin
 
         valid[idx]      <= `FALSE;              /// TODO: this is very important!
         icache_tag[idx] <= pc[`ICACHE_TAG_RANGE];
-        addr            <= {pc[16:4], 4'b0000}; //  TODO: hardcoding, waited to be removed
+        addr            <= {pc[16:4], 4'b0000};
       end
       else begin
         if (valid_from_mc) begin 

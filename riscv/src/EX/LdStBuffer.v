@@ -74,23 +74,25 @@ wire [ADDR_BITS - 1 : 0] next_tail = (tail == 2 ** ADDR_BITS - 1) ? 0 : tail + 1
 wire [`ROB_ID_RANGE] Qi_2queue, Qj_2queue;
 wire [`DATA_IDX_RANGE] Vi_2queue, Vj_2queue;
 
-wire checkQi_from_lsb = (rdy_from_mc && alias_from_lsb == Qi_from_is);
+wire checkQi_from_lsb = (lsb_has_result && alias_from_lsb == Qi_from_is);
 wire checkQi_from_alu = (alu_has_result && alias_from_alu == Qi_from_is);
 
-wire checkQj_from_lsb = (rdy_from_mc && alias_from_lsb == Qj_from_is);
+wire checkQj_from_lsb = (lsb_has_result && alias_from_lsb == Qj_from_is);
 wire checkQj_from_alu = (alu_has_result && alias_from_alu == Qj_from_is);
 
 assign Qi_2queue = checkQi_from_lsb ? `RENAMED_ZERO : (checkQi_from_alu ? `RENAMED_ZERO : Qi_from_is);
 assign Qj_2queue = checkQj_from_lsb ? `RENAMED_ZERO : (checkQj_from_alu ? `RENAMED_ZERO : Qj_from_is);
 
-assign Vi_2queue = checkQi_from_lsb ? data_from_mc : (checkQi_from_alu ? result_from_alu : Vi_from_is);
-assign Vj_2queue = checkQj_from_lsb ? data_from_mc : (checkQj_from_alu ? result_from_alu : Vj_from_is); 
+assign Vi_2queue = checkQi_from_lsb ? result_from_lsb : (checkQi_from_alu ? result_from_alu : Vi_from_is);
+assign Vj_2queue = checkQj_from_lsb ? result_from_lsb : (checkQj_from_alu ? result_from_alu : Vj_from_is); 
 
 // ================
 
 // ==== EX part ====
-wire check = (optype[head] >= `OPTYPE_SB && optype[head] <= `OPTYPE_SW) ? 
-                  (prepared_to_commit && ID[head] == store_commit_alias) : `TRUE;
+// wire check = (optype[head] >= `OPTYPE_LB && optype[head] <= `OPTYPE_SW) ? 
+//                   (prepared_to_commit && ID[head] == store_commit_alias) : `TRUE;
+
+wire check = (prepared_to_commit && ID[head] == store_commit_alias);
 wire ready = (head != tail) && (!Qi[head] && !Qj[head] && check);
 
 wire [`DATA_IDX_RANGE] rs1, rs2, imm;
@@ -123,7 +125,8 @@ always @(posedge clk) begin
   else if (~rdy) begin // pause
   end
   else if (rollback_signal) begin
-    status  <= (status == `LOADING) ? `LSB_RBACK : `LSB_NORM;
+    status  <= `LSB_NORM;
+    // status  <= (status == `LOADING) ? `LSB_RBACK : `LSB_NORM;
     head    <= 0;
     tail    <= 0;
   end
@@ -134,10 +137,10 @@ always @(posedge clk) begin
 // `endif
     if (rdy_from_is) begin // TODO: is_full?
 
-// `ifdef Debug
-//       $fdisplay(outfile, "time = %d, pc = %x, add instrution (%d)\nhead = %d, optype = %d\nVi = %x, Vj = %x, Qi = %d, Qj = %d\n", 
-//                         $time, pc_from_dsp, tail, head, optype_from_is, Vi_from_is, Vj_2queue, Qi_2queue, Qj_2queue);
-// `endif
+`ifdef Debug
+      $fdisplay(outfile, "time = %d, pc = %x, add instrution (%d), alias = %d\nhead = %d, optype = %d\nVi = %x, Vj = %x, Qi = %d, Qj = %d\n", 
+                        $time, pc_from_dsp, tail, rd_alias_from_is, head,  optype_from_is, Vi_from_is, Vj_2queue, Qi_2queue, Qj_2queue);
+`endif
       tail          <= next_tail;
 
       optype[tail]  <= optype_from_is;
@@ -151,9 +154,9 @@ always @(posedge clk) begin
 
      // use ALU's result to update RS
     if (alu_has_result) begin
-// `ifdef Debug
-//       $fdisplay(outfile, "time = %d, ALU's alias = %d\n", $time, alias_from_alu);
-// `endif
+`ifdef Debug
+      $fdisplay(outfile, "time = %d, ALU's alias = %d\n", $time, alias_from_alu);
+`endif
       for (i = 0; i < (2 ** ADDR_BITS); i = i + 1) begin
         if (Qi[i] == alias_from_alu) begin
           Qi[i]   <= `RENAMED_ZERO;
@@ -162,6 +165,22 @@ always @(posedge clk) begin
         if (Qj[i] == alias_from_alu) begin
           Qj[i]   <= `RENAMED_ZERO;
           Vj[i]   <= result_from_alu;
+        end
+      end
+    end
+
+    if (lsb_has_result) begin
+`ifdef Debug
+      $fdisplay(outfile, "time = %d, LSB's alias = %d, result = %d\n", $time, alias_from_lsb, result_from_lsb);
+`endif
+      for (i = 0; i < (2**ADDR_BITS); i = i + 1) begin
+        if (Qi[i] == alias_from_lsb) begin
+          Qi[i]   <= `RENAMED_ZERO;
+          Vi[i]   <= result_from_lsb;
+        end
+        if (Qj[i] == alias_from_lsb) begin
+          Qj[i]   <= `RENAMED_ZERO;
+          Vj[i]   <= result_from_lsb;
         end
       end
     end
@@ -178,7 +197,7 @@ always @(posedge clk) begin
         optype_2mc      <= optype[head];
         addr_2mc        <= rs1 + imm;
 `ifdef Debug
-      $fdisplay(outfile, "time = %d, optype = %d, address = %x, data = %d\n", $time, optype[head], rs1 + imm, rs2);
+      $fdisplay(outfile, "time = %d, head = %d, optype = %d, address = %x, data = %d\n", $time, head, optype[head], rs1 + imm, rs2);
 `endif
 
         case (optype[head]) 
@@ -236,16 +255,6 @@ always @(posedge clk) begin
         lsb_has_result  <= `TRUE;
         result_from_lsb <= data_from_mc;
         
-        for (i = 0; i < (2**ADDR_BITS); i = i + 1) begin
-          if (Qi[i] == alias_from_lsb) begin
-            Qi[i]   <= `RENAMED_ZERO;
-            Vi[i]   <= data_from_mc;
-          end
-          if (Qj[i] == alias_from_lsb) begin
-            Qj[i]   <= `RENAMED_ZERO;
-            Vj[i]   <= data_from_mc;
-          end
-        end
 // `ifdef Debug
 //       if (counter > 0) begin
 //           $fdisplay(outfile, "time = %d, load || address = %x, data acquired : %x\n", $time, addr_2mc, data_from_mc);
@@ -263,25 +272,17 @@ always @(posedge clk) begin
         totByte <= 0;
         lsb_has_result  <= `TRUE;
         result_from_lsb <= `ZERO;
-// `ifdef Debug
-//         if (counter == 0)
-//           $fdisplay(outfile, "time = %d, store || address = %x, data acquired : %x\n", $time, addr_2mc + 1, data_written[15:8]);
-//         if (counter == 1)
-//           $fdisplay(outfile, "time = %d, store || address = %x, data acquired : %x\n", $time, addr_2mc + 1, data_written[23:16]);
-//         if (counter == 2)
-//           $fdisplay(outfile, "time = %d, store || address = %x, data acquired : %x\n", $time, addr_2mc + 1, data_written[31:24]);
-// `endif
-
       end
     end
-    else if (status == `LSB_RBACK) begin
-      if (rdy_from_mc) begin
-        status          <= `LSB_NORM;
-        ena_mc          <= `FALSE;
-        lsb_has_result  <= `FALSE;
-        totByte         <= 0;
-      end
-    end
+    // else if (status == `LSB_RBACK) begin
+    //   $display("gg");
+    //   if (rdy_from_mc) begin
+    //     status          <= `LSB_NORM;
+    //     ena_mc          <= `FALSE;
+    //     lsb_has_result  <= `FALSE;
+    //     totByte         <= 0;
+    //   end
+    // end
   end
 
 end

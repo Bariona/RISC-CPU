@@ -33,23 +33,27 @@ reg [`DATA_IDX_RANGE]   register[`REG_SIZE - 1 : 0];
 reg [`ROB_ID_RANGE]     regAlias[`REG_SIZE - 1 : 0];
 
 // check_rs1: the lateset updated data from ROB
-wire check_rs1 = (rob_has_res && regidx_from_rob == rs1_from_dsp && regAlias[rs1_from_dsp] == regalias_from_rob);
-assign Qi_2dsp = check_rs1 ? `REG_ZERO : regAlias[rs1_from_dsp];
+wire [`ROB_ID_RANGE] alias_rs1 = (ena_reg_rename && target_reg == rs1_from_dsp) ? targetReg_alias : regAlias[rs1_from_dsp];
+wire check_rs1 = (rob_has_res && regidx_from_rob == rs1_from_dsp && alias_rs1 == regalias_from_rob);
+assign Qi_2dsp = check_rs1 ? `REG_ZERO : alias_rs1;
 assign Vi_2dsp = check_rs1 ? result_from_rob : register[rs1_from_dsp];
 
 // check_rs2: the lateset updated data from ROB
-wire check_rs2 = (rob_has_res && regidx_from_rob == rs2_from_dsp && regAlias[rs2_from_dsp] == regalias_from_rob);
-assign Qj_2dsp = check_rs2 ? `REG_ZERO : regAlias[rs2_from_dsp];
+wire [`ROB_ID_RANGE] alias_rs2 = (ena_reg_rename && target_reg == rs2_from_dsp) ? targetReg_alias : regAlias[rs2_from_dsp];
+wire check_rs2 = (rob_has_res && regidx_from_rob == rs2_from_dsp && alias_rs2 == regalias_from_rob);
+assign Qj_2dsp = check_rs2 ? `REG_ZERO : alias_rs2;
 assign Vj_2dsp = check_rs2 ? result_from_rob : register[rs2_from_dsp];
 
-wire checkRename = (regalias_from_rob == regAlias[regidx_from_rob]) && 
+wire deleteRename = (regalias_from_rob == regAlias[regidx_from_rob]) && 
                           (~ena_reg_rename || (ena_reg_rename && target_reg != regidx_from_rob));
 integer i;
 
-// integer outfile;
-// initial begin
-//   outfile = $fopen("regfile.out");
-// end
+`ifdef Debug
+  integer outfile;
+  initial begin
+    outfile = $fopen("regfile.out");
+  end
+`endif
 
 always @(posedge clk) begin
   if (rst) begin
@@ -69,12 +73,13 @@ always @(posedge clk) begin
 
   else begin
 
-    if (ena_reg_rename && target_reg != `REG_ZERO) begin // rename reg
+    if (ena_reg_rename) begin // rename reg
       regAlias[target_reg] <= targetReg_alias;
     end
 
     if (rob_has_res && regidx_from_rob != 0) begin // update reg
 `ifdef Debug
+    $fdisplay(outfile, "after execution: reg[%02d] = %x\n", regidx_from_rob, result_from_rob);
     // $fdisplay(outfile, "time = %d, after execution: reg[%02d] = %x\n", $time, regidx_from_rob, result_from_rob);
     // $fdisplay(outfile, "time = %d", $time);
     // for (i = 0; i < 20; i = i + 2) begin
@@ -82,7 +87,7 @@ always @(posedge clk) begin
     // end
 `endif
       register[regidx_from_rob]   <= result_from_rob;
-      if (checkRename) begin
+      if (deleteRename) begin
         regAlias[regidx_from_rob] <= `RENAMED_ZERO;
       end
 

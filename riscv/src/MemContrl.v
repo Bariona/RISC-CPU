@@ -140,11 +140,11 @@ always @(posedge clk) begin
 
       addr_2ram   <= (counter == 0) ? addr_from_lsb : addr_2ram + `ONE;
 
-`ifdef Debug
-      if (addr_from_lsb == 32'h30000) begin
-        $fdisplay(outfile, "time = %d, data = %d\n", $time, data_from_lsb[7:0]);
-      end
-`endif
+// `ifdef Debug
+//       if (addr_from_lsb == 32'h30000) begin
+//         $fdisplay(outfile, "time = %d, data = %d\n", $time, data_from_lsb[7:0]);
+//       end
+// `endif
 
       if (counter <= totByte - 1) begin
         counter     <= counter + `ONE;
@@ -167,7 +167,12 @@ always @(posedge clk) begin
         32'h3 : data_2lsb[23:16] <= data_from_ram;
         32'h4 : data_2lsb[31:24] <= data_from_ram;
       endcase
-      
+
+`ifdef Debug
+      //if (addr_from_lsb == 32'h30000) begin
+        // $fdisplay(outfile, "time = %d, address = %x, data = %d\n", $time, addr_2ram, data_from_ram);
+      //end
+`endif     
       // if (counter > 0)  // TODO: OPTIMIZE strucutre
         addr_2ram   <= addr_2ram + `ONE;
 

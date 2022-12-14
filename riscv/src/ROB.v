@@ -83,16 +83,16 @@ assign Vi_2dsp        = val[Qi_query_from_dsp];
 assign Vj_2dsp        = val[Qj_query_from_dsp];
 
 // lsb
-assign store_prepared_to_commit = (~rob_empty) && (optype[head] >= `OPTYPE_SB && optype[head] <= `OPTYPE_SW);
+assign store_prepared_to_commit = (~rob_empty) && (optype[head] >= `OPTYPE_LB && optype[head] <= `OPTYPE_SW);
 assign store_alias_2lsb         = head;
 
 integer i;
 
 `ifdef Debug
-  integer outfile;
-  initial begin
-    outfile = $fopen("test.out");
-  end
+ integer outfile;
+ initial begin
+   outfile = $fopen("test.out");
+ end
 `endif
 
 always @(posedge clk) begin
@@ -121,8 +121,8 @@ always @(posedge clk) begin
     // end
 
 `ifdef Debug
-    $fdisplay(outfile, "pc = %x", pc[head]);
-    // $fdisplay(outfile, "time = %d, pc = %x, optype = %d", $time, pc[head], optype[head]);
+    // $fdisplay(outfile, "pc = %x", pc[head]);
+    $fdisplay(outfile, "time = %d, pc = %x, optype = %d", $time, pc[head], optype[head]);
 `endif
     
 `ifdef Debug
@@ -166,6 +166,10 @@ always @(posedge clk) begin
         res_2reg        <= val[head];
         reg_alias       <= head;
       end
+      else begin
+        res_rdy_2reg    <= `FALSE;
+      end
+
     end
     else begin
       ena_pred      <= `FALSE;

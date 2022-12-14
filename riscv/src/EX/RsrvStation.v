@@ -167,8 +167,8 @@ always @(posedge clk) begin
       busy[ex_entry_idx]  <= `FALSE;
 
 `ifdef Debug
-  if (optype[ex_entry_idx] == `OPTYPE_ADDI) begin
-    $fdisplay(outfile, "time = %d, rs1 = %x, rs2 = %x, imm = %x", $time, Vi[ex_entry_idx], Vj[ex_entry_idx], imm[ex_entry_idx]);
+  if (optype[ex_entry_idx] == `OPTYPE_BEQ) begin
+    $fdisplay(outfile, "time = %d, pc = %x, rs1 = %x, rs2 = %x, imm = %x", $time, pc[ex_entry_idx], Vi[ex_entry_idx], Vj[ex_entry_idx], imm[ex_entry_idx]);
   end
 `endif
 

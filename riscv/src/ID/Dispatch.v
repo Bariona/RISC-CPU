@@ -145,11 +145,11 @@ always @(posedge clk) begin
 
   else if (valid_from_fet && ~is_full) begin
     // rename register file
-    
-
-    ena_regfile_rename  <= `TRUE;
-    rd_2reg         <= rd;
-    rd_alias        <= id_from_rob;
+    if (rd != `REG_ZERO) begin
+      ena_regfile_rename  <= `TRUE;
+      rd_2reg         <= rd;
+      rd_alias        <= id_from_rob;
+    end
 
     // update rob
     instr_rdy_2rob  <= `TRUE;
@@ -164,7 +164,8 @@ always @(posedge clk) begin
       ena_rs    <= `FALSE;
 `ifdef Debug
     $fdisplay(outfile, "time = %d, pc = %x, instruction = %x", $time, pc_from_fet, instr_from_fet);
-    $fdisplay(outfile, "instr = %x, optype = %d, alu: %d, lsb: %d, Qi = %d, Qj = %d, Vi = %d, Vj = %d\n", instr_from_fet, optype, alu_has_result, lsb_has_result, Qi, Qj, Vi, Vj);
+    $fdisplay(outfile, "instr = %x, optype = %d, alu: %d, lsb: %d, → rob'id = %d, Qi = %d, Qj = %d, Vi = %d, Vj = %d\n", 
+            instr_from_fet, optype, alu_has_result, lsb_has_result, id_from_rob, Qi, Qj, Vi, Vj);
 `endif
       optype_2lsb   <= optype;
       rd_alias_2lsb <= id_from_rob;
