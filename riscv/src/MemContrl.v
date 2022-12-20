@@ -32,7 +32,7 @@ module MemController (
 
   // port with ram
   output reg  ram_ena,
-  output reg wr_mc2ram,              // write_or_read (write: 1 read: 0)
+  output reg  wr_mc2ram,              // write_or_read (write: 1 read: 0)
   output reg  [`DATA_IDX_RANGE] addr_2ram,
   output reg  [`MEM_IDX_RANGE]  data_2ram,
 
@@ -45,10 +45,6 @@ reg [`DATA_IDX_RANGE] counter;
 
 // assign wr_mc2ram  = wr_ena ? wr_from_lsb : (fet_ena ? `LOAD_MEM : 0);
 
-// initial begin
-//   $display("status is %d at %t", valid_2icache, $realtime);
-//   # 40; $display("status is %d at %t", valid_2icache, $time);
-// end
 `ifdef Debug
   integer outfile;
   initial begin
@@ -62,32 +58,38 @@ always @(posedge clk) begin
     counter <= `ZERO;
     ram_ena <= `FALSE;
     wr_mc2ram     <= `LOAD_MEM;
-    data_2icache  <= `ZERO;
     addr_2ram     <= `ZERO;
+    data_2ram     <= `ZERO;
     valid_2icache <= `FALSE;
+    data_2icache  <= `ZERO;
     valid_2lsb    <= `FALSE;
+    data_2lsb     <= `ZERO;
   end
   else if (~rdy) begin //pause
   end
+  else if (uart_full_signal) begin
+  end
+
   else begin
     if (status == `NORM) begin 
       
       valid_2icache <= `FALSE;
       valid_2lsb    <= `FALSE;
 
-      if (wr_ena) begin  // TODO: 改掉Memory的load形式, 达到1个cycle.
+      if (wr_ena) begin
         if (wr_from_lsb) begin
           status      <= `STROE;
           ram_ena     <= `FALSE;
           wr_mc2ram   <= `LOAD_MEM;
           addr_2ram   <= `ZERO;
+          data_2ram   <= `ZERO;
         end
         else begin
           status      <= `LOAD;
           data_2lsb   <= `ZERO;
           ram_ena     <= `TRUE;
           wr_mc2ram   <= `LOAD_MEM;
-          addr_2ram     <= addr_from_lsb;
+          addr_2ram   <= addr_from_lsb;
         end
         counter       <= `ZERO;
         
@@ -117,13 +119,15 @@ always @(posedge clk) begin
         32'h4 : data_2icache[31:24] <= data_from_ram;
       endcase
       
-      addr_2ram   <= addr_2ram + `ONE; // +1是因为下一个周期才能拿到数据
+      
       if (counter <= `INSTR_PER_BYTE - 1) begin
-        counter   <= counter + `ONE;
+        counter   <= counter    + `ONE;
+        addr_2ram <= addr_2ram  + `ONE;
       end
       else begin
         status        <= `STALL; // update to icache costs 1 cycle
         counter       <= `ZERO;
+        addr_2ram     <= `ZERO;
         valid_2icache <= `TRUE;
         ram_ena       <= `FALSE;
       end
@@ -131,24 +135,16 @@ always @(posedge clk) begin
     else if (status == `STROE && !uart_full_signal) begin
       wr_mc2ram   <= `STORE_MEM;
       case (counter)
-        // cost 1 cycle to store mem.
         32'h0: data_2ram  <= data_from_lsb[7:0];
         32'h1: data_2ram  <= data_from_lsb[15:8];
         32'h2: data_2ram  <= data_from_lsb[23:16];
         32'h3: data_2ram  <= data_from_lsb[31:24];
       endcase
 
-      addr_2ram   <= (counter == 0) ? addr_from_lsb : addr_2ram + `ONE;
-
-// `ifdef Debug
-//       if (addr_from_lsb == 32'h30000) begin
-//         $fdisplay(outfile, "time = %d, data = %d\n", $time, data_from_lsb[7:0]);
-//       end
-// `endif
-
       if (counter <= totByte - 1) begin
         counter     <= counter + `ONE;
         ram_ena     <= `TRUE;
+        addr_2ram   <= (counter == 0) ? addr_from_lsb : addr_2ram + `ONE;
       end
       else begin
         status      <= `LdStSTALL;
@@ -168,18 +164,14 @@ always @(posedge clk) begin
         32'h4 : data_2lsb[31:24] <= data_from_ram;
       endcase
 
-`ifdef Debug
-      //if (addr_from_lsb == 32'h30000) begin
-        // $fdisplay(outfile, "time = %d, address = %x, data = %d\n", $time, addr_2ram, data_from_ram);
-      //end
-`endif     
-      // if (counter > 0)  // TODO: OPTIMIZE strucutre
-        addr_2ram   <= addr_2ram + `ONE;
-
       if (counter <= totByte - 1) begin
         counter     <= counter   + `ONE;
+        addr_2ram   <= addr_2ram + `ONE;
       end
       else begin
+        counter     <= `ZERO;
+        addr_2ram   <= `ZERO;
+
         if (optype_from_lsb == `OPTYPE_LB || optype_from_lsb == `OPTYPE_LH) begin
           status      <= `LOAD_STALL;
           ram_ena     <= `FALSE;
@@ -188,24 +180,26 @@ always @(posedge clk) begin
           status      <= `LdStSTALL;
           valid_2lsb  <= `TRUE;
           ram_ena     <= `FALSE;
-          addr_2ram   <= `ZERO;
         end
-        counter     <= `ZERO;
+        
       end
     end
     else if (status == `LdStSTALL) begin // STALL
       status        <= `STALL;
       valid_2icache <= `FALSE;
       valid_2lsb    <= `FALSE;
+      addr_2ram   <= `ZERO;
     end
     else if (status == `STALL) begin // STALL
       status        <= `NORM;
       valid_2icache <= `FALSE;
       valid_2lsb    <= `FALSE;
+      addr_2ram   <= `ZERO;
     end
     else if (status == `LOAD_STALL) begin
       valid_2lsb  <= `TRUE;
       status      <= `LdStSTALL;
+      addr_2ram   <= `ZERO;
       if (optype_from_lsb == `OPTYPE_LB) begin
         data_2lsb <= {{25{data_2lsb[7]}}, data_2lsb[6:0]};
       end

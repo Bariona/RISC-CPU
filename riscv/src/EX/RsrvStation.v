@@ -1,8 +1,5 @@
 `include "const.v"
 
-`define RS_SIZE      16
-`define RS_IDX_RANGE 4:0
-
 module ReserveStation (
   input wire clk,
   input wire rst, 
@@ -66,7 +63,7 @@ assign avail_entry = (~busy[0] ? 0 :
                               (~busy[4] ? 4 : 
                                 (~busy[5] ? 5 : 
                                   (~busy[6] ? 6 :
-                                    (~busy[7] ? 7 :
+                                    (~busy[7] ? 7 : // 8))))))));
                                       (~busy[8] ? 8 :
                                         (~busy[9] ? 9 :
                                           (~busy[10] ? 10 :
@@ -85,7 +82,7 @@ assign ex_entry_idx = ((busy[0] && !Qi[0] && !Qj[0]) ? 0 :
                               ((busy[4] && !Qi[4] && !Qj[4]) ? 4 :
                                 ((busy[5] && !Qi[5] && !Qj[5]) ? 5 :
                                   ((busy[6] && !Qi[6] && !Qj[6]) ? 6 :
-                                    ((busy[7] && !Qi[7] && !Qj[7]) ? 7 :
+                                    ((busy[7] && !Qi[7] && !Qj[7]) ? 7 : // 8))))))));
                                       ((busy[8] && !Qi[8] && !Qj[8]) ? 8 :
                                         ((busy[9] && !Qi[9] && !Qj[9]) ? 9 :
                                           ((busy[10] && !Qi[10] && !Qj[10]) ? 10 :
@@ -124,12 +121,22 @@ integer i;
 always @(posedge clk) begin
   if (rst || rollback_signal) begin
     optype_2alu <= `NOP;
+    rd_2alu     <= `REG_ZERO;
+    pc_2alu     <= `ZERO;
+    Vi_2alu     <= `ZERO;
+    Vj_2alu     <= `ZERO;
+    imm_2alu    <= `ZERO;
     for (i = 0; i < `RS_SIZE; i = i + 1) begin
       busy[i]   <= `FALSE;
-      Qi[i]     <= `REG_ZERO;
-      Qj[i]     <= `REG_ZERO;
+      optype[i] <= `NOP;
+      pc[i]     <= `ZERO;
+      
+      ID[i]     <= `RENAMED_ZERO;
+      Qi[i]     <= `RENAMED_ZERO;
+      Qj[i]     <= `RENAMED_ZERO;
       Vi[i]     <= `ZERO;
       Vj[i]     <= `ZERO;
+      imm[i]    <= `ZERO;
     end
   end
 

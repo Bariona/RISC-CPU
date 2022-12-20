@@ -5,9 +5,8 @@ isWin = sys.platform[:3] == 'win'
 wslPrefix = 'ubuntu.exe run ' if isWin else ''
 
 test_cases_dir = './testcase/fpga'
-path_of_bit = 'D:/fpga/project_6/project_6.runs/impl_1/riscv_top.bit' # A Windows-style path is ok if you runs on Windows
+path_of_bit = 'D:/fpga/project_7/project_7.runs/impl_1/riscv_top.bit' # A Windows-style path is ok if you runs on Windows
 excluded_test_cases = ['heart', 'mytest']
-
 color_red = "\033[0;31m"
 color_green = "\033[0;32m"
 color_none = "\033[0m"
@@ -40,7 +39,7 @@ def main():
         print('Testing ' + t + ': ')
         if os.system(wslPrefix + './autorun_fpga.sh ' + t): 
             print(color_red + 'Test Failed' + color_none)
-            continue
+            break
         if os.system(wslPrefix + 'diff ./test/test.ans ./test/test.out > diff.out'): 
             print(color_red + 'Wrong Answer' + color_none)
             continue

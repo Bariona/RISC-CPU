@@ -6,10 +6,7 @@
 `define LSB_RBACK   3'b111
 // `define UPDATE  3'b111
 
-module LoadStoreBuffer 
-#(
-  parameter ADDR_BITS = 4
-) (
+module LoadStoreBuffer (
   input wire clk,
   input wire rst,
   input wire rdy,   
@@ -48,7 +45,7 @@ module LoadStoreBuffer
 
   // LSB's cdb result
   output reg lsb_has_result,
-  output reg  [`ROB_ID_RANGE]   alias_from_lsb,
+  output reg [`ROB_ID_RANGE]   alias_from_lsb,
   output reg [`DATA_IDX_RANGE] result_from_lsb,
 
   input wire rollback_signal
@@ -57,17 +54,17 @@ module LoadStoreBuffer
 reg [2:0] status;
 
 // ===== FIFO =====
-reg [ADDR_BITS - 1 : 0] head, tail;
-reg [`OPCODE_TYPE]    optype[2**ADDR_BITS - 1 : 0];
-reg [`ROB_ID_RANGE]   ID[2**ADDR_BITS - 1 : 0];
-reg [`ROB_ID_RANGE]   Qi[2**ADDR_BITS - 1 : 0];
-reg [`ROB_ID_RANGE]   Qj[2**ADDR_BITS - 1 : 0];
-reg [`DATA_IDX_RANGE] Vi[2**ADDR_BITS - 1 : 0];
-reg [`DATA_IDX_RANGE] Vj[2**ADDR_BITS - 1 : 0];
-reg [`DATA_IDX_RANGE] immediate[2**ADDR_BITS - 1 : 0];
+reg [`LSB_ID_RANGE] head, tail;
+reg [`OPCODE_TYPE]    optype[`LSB_SIZE - 1 : 0];
+reg [`ROB_ID_RANGE]   ID[`LSB_SIZE - 1 : 0];
+reg [`ROB_ID_RANGE]   Qi[`LSB_SIZE - 1 : 0];
+reg [`ROB_ID_RANGE]   Qj[`LSB_SIZE - 1 : 0];
+reg [`DATA_IDX_RANGE] Vi[`LSB_SIZE - 1 : 0];
+reg [`DATA_IDX_RANGE] Vj[`LSB_SIZE - 1 : 0];
+reg [`DATA_IDX_RANGE] immediate[`LSB_SIZE : 0];
 
-wire [ADDR_BITS - 1 : 0] next_head = (head == 2 ** ADDR_BITS - 1) ? 0 : head + 1;
-wire [ADDR_BITS - 1 : 0] next_tail = (tail == 2 ** ADDR_BITS - 1) ? 0 : tail + 1;
+wire [`LSB_ID_RANGE] next_head = (head == `LSB_SIZE - 1) ? 0 : head + 1;
+wire [`LSB_ID_RANGE] next_tail = (tail == `LSB_SIZE - 1) ? 0 : tail + 1;
 // ================
 
 // ==== ISSUE =====
@@ -113,23 +110,40 @@ integer i;
 `endif 
 
 always @(posedge clk) begin
-  if (rst) begin
+  if (rst || rollback_signal) begin
     status     <= `LSB_NORM;
     ena_mc     <= `FALSE;
+    wr_2mc     <= `LOAD_MEM;
     head       <= 0;
     tail       <= 0;
+    
+    optype_2mc <= `NOP;
+    addr_2mc   <= `ZERO;
+    data_2mc   <= `ZERO;
     totByte    <= `ZERO;
-    lsb_has_result <= `FALSE;
+
+    lsb_has_result  <= `FALSE;
+    alias_from_lsb  <= `RENAMED_ZERO;
+    result_from_lsb <= `ZERO;
+    for (i = 0; i < `LSB_SIZE; i = i + 1) begin
+      optype[i] <= `NOP;
+      ID[i]     <= `RENAMED_ZERO;
+      Qi[i]     <= `RENAMED_ZERO;
+      Qj[i]     <= `RENAMED_ZERO;
+      Vi[i]     <= `ZERO;
+      Vj[i]     <= `ZERO;
+      immediate[i]  <= `ZERO;
+    end
   end
 
   else if (~rdy) begin // pause
   end
-  else if (rollback_signal) begin
-    status  <= `LSB_NORM;
-    // status  <= (status == `LOADING) ? `LSB_RBACK : `LSB_NORM;
-    head    <= 0;
-    tail    <= 0;
-  end
+  // else if (rollback_signal) begin
+  //   status  <= `LSB_NORM;
+  //   // status  <= (status == `LOADING) ? `LSB_RBACK : `LSB_NORM;
+  //   head    <= 0;
+  //   tail    <= 0;
+  // end
 
   else begin
 // `ifdef Debug
@@ -154,10 +168,10 @@ always @(posedge clk) begin
 
      // use ALU's result to update RS
     if (alu_has_result) begin
-`ifdef Debug
-      $fdisplay(outfile, "time = %d, ALU's alias = %d\n", $time, alias_from_alu);
-`endif
-      for (i = 0; i < (2 ** ADDR_BITS); i = i + 1) begin
+// `ifdef Debug
+//       $fdisplay(outfile, "time = %d, ALU's alias = %d\n", $time, alias_from_alu);
+// `endif
+      for (i = 0; i < `LSB_SIZE; i = i + 1) begin
         if (Qi[i] == alias_from_alu) begin
           Qi[i]   <= `RENAMED_ZERO;
           Vi[i]   <= result_from_alu;
@@ -170,10 +184,10 @@ always @(posedge clk) begin
     end
 
     if (lsb_has_result) begin
-`ifdef Debug
-      $fdisplay(outfile, "time = %d, LSB's alias = %d, result = %d\n", $time, alias_from_lsb, result_from_lsb);
-`endif
-      for (i = 0; i < (2**ADDR_BITS); i = i + 1) begin
+// `ifdef Debug
+//       $fdisplay(outfile, "time = %d, LSB's alias = %d, result = %d\n", $time, alias_from_lsb, result_from_lsb);
+// `endif
+      for (i = 0; i < `LSB_SIZE; i = i + 1) begin
         if (Qi[i] == alias_from_lsb) begin
           Qi[i]   <= `RENAMED_ZERO;
           Vi[i]   <= result_from_lsb;
@@ -188,7 +202,8 @@ always @(posedge clk) begin
     if (status == `LSB_NORM) begin
       
       lsb_has_result  <= `FALSE;
-
+      alias_from_lsb  <= `FALSE;
+      
       if (ready) begin     
         head            <= next_head;
         alias_from_lsb  <= ID[head];
@@ -242,8 +257,9 @@ always @(posedge clk) begin
         endcase
       end
       else begin
-        ena_mc     <= `FALSE;
-        optype_2mc <= `NOP;
+        ena_mc      <= `FALSE;
+        optype_2mc  <= `NOP;
+        addr_2mc    <= `ZERO;
       end
     end
 
@@ -274,15 +290,6 @@ always @(posedge clk) begin
         result_from_lsb <= `ZERO;
       end
     end
-    // else if (status == `LSB_RBACK) begin
-    //   $display("gg");
-    //   if (rdy_from_mc) begin
-    //     status          <= `LSB_NORM;
-    //     ena_mc          <= `FALSE;
-    //     lsb_has_result  <= `FALSE;
-    //     totByte         <= 0;
-    //   end
-    // end
   end
 
 end

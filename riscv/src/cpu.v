@@ -108,7 +108,7 @@ Predictor predictor (
   .rst(rst_in),
   .rdy(rdy_in),
 
-  .instr_valid(valid_if_pred),
+  // .instr_valid(valid_if_pred),
   .instr_from_IC(instr_2pred),
   .cur_pc(curpc_2pred),
   .if_jump(pred_if_jump),
@@ -147,7 +147,7 @@ InsFetcher fetcher (
   .instr_valid(instr_rdy_if_icache),
   .instr_from_icache(instr_if_icache),
 
-  .valid_2pred(valid_if_pred), // pred
+  // .valid_2pred(valid_if_pred), // pred
   .instr_2pred(instr_2pred),
   .cur_pc(curpc_2pred),
   .if_jump(pred_if_jump),
@@ -329,7 +329,7 @@ ALU alu (
 wire prepared_to_commit;
 wire [`ROB_ID_RANGE] store_alias_2lsb;
 
-LoadStoreBuffer #(.ADDR_BITS(4)) LSB (
+LoadStoreBuffer LSB (
   .clk(clk_in),
   .rst(rst_in),
   .rdy(rdy_in),
@@ -419,7 +419,9 @@ ROB rob (
   .res_rdy_2reg(res_rdy_rob_reg), // reg
   .res_2reg(res_rob_reg),
   .regidx_2regfile(regidx_rob_reg),
-  .reg_alias(reg_alias_rob_reg)
+  .reg_alias(reg_alias_rob_reg),
+
+  .debug_out(dbgreg_dout)
 );
 
 

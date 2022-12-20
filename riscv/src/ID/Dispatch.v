@@ -135,9 +135,38 @@ Decoder decoder (
 always @(posedge clk) begin
   if (rst || rollback_signal) begin
     ena_lsb <= `FALSE;
+    rd_alias_2lsb <= `RENAMED_ZERO;
+    optype_2lsb   <= `NOP;
+    pc_2lsb       <= `ZERO;
+    Qi_2lsb       <= `RENAMED_ZERO;
+    Qj_2lsb       <= `RENAMED_ZERO;
+    Vi_2lsb       <= `ZERO;
+    Vj_2lsb       <= `ZERO;
+    imm_2lsb      <= `ZERO;
+
     ena_rs  <= `FALSE;
+    rd_alias_2rs  <= `RENAMED_ZERO;
+    optype_2rs    <= `NOP;
+    pc_2rs       <= `ZERO;
+    Qi_2rs       <= `RENAMED_ZERO;
+    Qj_2rs       <= `RENAMED_ZERO;
+    Vi_2rs       <= `ZERO;
+    Vj_2rs       <= `ZERO;
+    imm_2rs      <= `ZERO;
+
+    pc_2rob <= `ZERO;
+
     ena_regfile_rename  <= `FALSE;
+    rd_2reg             <= `REG_ZERO;
+    rd_alias            <= `RENAMED_ZERO;
+    
     instr_rdy_2rob      <= `FALSE;
+    pc_2rob             <= `ZERO;
+    instr_tar_rd        <= `REG_ZERO;
+    is_jump_2rob        <= `FALSE;
+    jumpRecord_2rob     <= `FALSE;
+    optype_2rob         <= `NOP;
+
   end
 
   else if(~rdy) begin // pause

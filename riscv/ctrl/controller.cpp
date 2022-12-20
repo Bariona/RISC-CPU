@@ -145,6 +145,7 @@ void run() {
                 // to debug cpu at the same time, implement separate thread
                 while (!serPort.available());
                 uart_read(&data,1);
+                // std::cerr << data << std::endl;
                 if (on_recv(data)) break;
             }
             end_tm = clock();
