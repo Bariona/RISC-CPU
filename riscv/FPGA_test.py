@@ -6,7 +6,7 @@ wslPrefix = 'ubuntu.exe run ' if isWin else ''
 
 test_cases_dir = './testcase/fpga'
 path_of_bit = 'D:/fpga/project_7/project_7.runs/impl_1/riscv_top.bit' # A Windows-style path is ok if you runs on Windows
-excluded_test_cases = ['heart', 'mytest']
+excluded_test_cases = ['mytest', 'heart']
 color_red = "\033[0;31m"
 color_green = "\033[0;32m"
 color_none = "\033[0m"
