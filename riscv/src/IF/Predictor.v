@@ -11,7 +11,6 @@ module Predictor (
   input wire rdy,
 
   // port with fetcher
-  input wire instr_valid,
   input wire [`DATA_IDX_RANGE] instr_from_IC,
   input wire [`DATA_IDX_RANGE] cur_pc,
   output wire if_jump,

@@ -51,8 +51,9 @@ module ROB (
   output reg res_rdy_2reg,
   output reg [`DATA_IDX_RANGE] res_2reg,
   output reg [`REG_RANGE] regidx_2regfile,
-  output reg [`ROB_ID_RANGE] reg_alias
+  output reg [`ROB_ID_RANGE] reg_alias,
 
+  output wire [`DATA_IDX_RANGE] debug_out
 );
 
 // ===== FIFO =====
@@ -64,7 +65,7 @@ reg [`ROB_SIZE - 1 : 0]   jumpRecord;
 reg [`ROB_SIZE - 1 : 0]   jumpResult;
 reg [`OPCODE_TYPE]         optype[`ROB_SIZE - 1 : 0];
 reg [`DATA_IDX_RANGE]          pc[`ROB_SIZE - 1 : 0]; // current pc
-reg [`DATA_IDX_RANGE]         val[`ROB_SIZE - 1 : 0];
+reg [`DATA_IDX_RANGE]      result[`ROB_SIZE - 1 : 0];
 reg [`DATA_IDX_RANGE] jumpTakenPc[`ROB_SIZE - 1 : 0]; // if jump, pc will be what
 reg [`REG_RANGE]        target_rd[`ROB_SIZE - 1 : 0];
 
@@ -79,8 +80,8 @@ assign rob_full = (next_tail == head);
 assign renameid_2dsp  = tail;
 assign rob_Qi_rdy     = ready[Qi_query_from_dsp];
 assign rob_Qj_rdy     = ready[Qj_query_from_dsp];
-assign Vi_2dsp        = val[Qi_query_from_dsp];
-assign Vj_2dsp        = val[Qj_query_from_dsp];
+assign Vi_2dsp        = result[Qi_query_from_dsp];
+assign Vj_2dsp        = result[Qj_query_from_dsp];
 
 // lsb
 assign store_prepared_to_commit = (~rob_empty) && (optype[head] >= `OPTYPE_LB && optype[head] <= `OPTYPE_SW);
@@ -95,18 +96,31 @@ integer i;
  end
 `endif
 
+assign debug_out = pc[head];
+
 always @(posedge clk) begin
   if (rst || rollback_signal) begin
     rollback_signal <= `FALSE;
+    rollback_pc     <= `ZERO;
     head            <= 1;
     tail            <= 1;
     ena_pred        <= `FALSE;
+    predict_res     <= `FALSE;
     res_rdy_2reg    <= `FALSE;
+    res_2reg        <= `ZERO;
+    reg_alias       <= `RENAMED_ZERO;
+    regidx_2regfile <= `REG_ZERO;
     commit_pc_2pred <= `ZERO;
-    rollback_pc     <= `ZERO;
+    
     for (i = 0; i < `ROB_SIZE; i = i + 1) begin
-      ready[i] <= `FALSE;
+      ready[i]      <= `FALSE;
+      is_jump[i]    <= `FALSE;
       jumpRecord[i] <= `FALSE;
+      jumpResult[i] <= `FALSE;
+      pc[i]         <= `ZERO;
+      result[i]     <= `ZERO;
+      jumpTakenPc[i]<= `ZERO;
+      target_rd[i]  <= `REG_ZERO;
     end
   end
 
@@ -158,12 +172,12 @@ always @(posedge clk) begin
         ena_pred  <= `FALSE;
       end
 `ifdef Debug
-      $fdisplay(outfile, "-> target register[%d], result = %x, alias = %x\n", target_rd[head], val[head], head);
+      $fdisplay(outfile, "-> target register[%d], result = %x, alias = %x\n", target_rd[head], result[head], head);
 `endif
       if (target_rd[head] != 0) begin
         res_rdy_2reg    <= `TRUE;
         regidx_2regfile <= target_rd[head];
-        res_2reg        <= val[head];
+        res_2reg        <= result[head];
         reg_alias       <= head;
       end
       else begin
@@ -178,15 +192,15 @@ always @(posedge clk) begin
     end
 
     if (alu_has_result) begin
-      ready[alias_from_alu] <= `TRUE;
-      val[alias_from_alu]   <= result_from_alu;
+      ready[alias_from_alu]       <= `TRUE;
+      result[alias_from_alu]      <= result_from_alu;
       jumpResult[alias_from_alu]  <= jump_res_from_alu;
       jumpTakenPc[alias_from_alu] <= jumpTaken_pc_from_alu;
     end
 
     if (lsb_has_result) begin
-      ready[alias_from_lsb] <= `TRUE;
-      val[alias_from_lsb]   <= result_from_lsb;
+      ready[alias_from_lsb]     <= `TRUE;
+      result[alias_from_lsb]    <= result_from_lsb;
     end
     if (instr_rdy_from_dsp) begin
 `ifdef Debug
@@ -195,6 +209,7 @@ always @(posedge clk) begin
 `endif
       tail              <= next_tail;
       ready[tail]       <= `FALSE;
+      result[tail]      <= `ZERO;
       pc[tail]          <= pc_from_dsp;
       target_rd[tail]   <= instr_rd_from_dsp;
       optype[tail]      <= optype_from_dsp;

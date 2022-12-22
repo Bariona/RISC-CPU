@@ -12,20 +12,22 @@
 
 // i$ relevant
 `define ICACHE_ENTRY            128
-`define ICACHE_BLOCK_RANGE    127:0  // each entry with 4 instructions
+`define ICACHE_INSTR_CNT        512
+// `define ICACHE_BLOCK_RANGE    127:0  // each entry with 4 instructions
+`define BLOCK_IDX_CNT            2
 `define ICACHE_TAG_RANGE       31:11
-`define ICACHE_IDX_RANGE       10:4
+`define PC_IDX_RANGE           10:4
+`define PC_INSTR_RANGE          3:2
+
+`define ICACHE_BLK_IDX_RANGE    8:0
+`define ICACHE_IDX_RANGE        6:0
+
 `define INSTR_RANGE             3:2
 `define INSTR_PER_BYTE           4
-
 `define BLOCK_INS_CNT          32'h4
-`define INS_00                 31:0
-`define INS_01                 63:32
-`define INS_10                 95:64
-`define INS_11                127:96
 
 // index range
-`define ADDR_IDX          16:0
+`define ADDR_IDX          31:0
 `define DATA_IDX_RANGE    31:0
 `define MEM_IDX_RANGE      7:0
 
@@ -33,6 +35,15 @@
 `define ROB_SIZE           32
 `define ROB_ID_RANGE       4:0
 `define RENAMED_ZERO      5'h00 // means don't have to be renamed
+
+// RS
+`define RS_SIZE      16 // 16
+`define RS_IDX_RANGE 4:0 // 4:0
+
+
+// LSB
+`define LSB_SIZE            16
+`define LSB_ID_RANGE       4:0
 
 // constant for size
 `define ADDR_WIDTH          17

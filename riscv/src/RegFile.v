@@ -59,7 +59,7 @@ always @(posedge clk) begin
   if (rst) begin
     for (i = 0; i < `REG_SIZE; i = i + 1) begin
       register[i] <= `ZERO;
-      regAlias[i] <= `ZERO;
+      regAlias[i] <= `RENAMED_ZERO;
     end
   end
   else if (~rdy) begin
@@ -72,7 +72,6 @@ always @(posedge clk) begin
   end
 
   else begin
-
     if (ena_reg_rename) begin // rename reg
       regAlias[target_reg] <= targetReg_alias;
     end

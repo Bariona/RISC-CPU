@@ -12,13 +12,12 @@ module InsFetcher(
   input  wire is_full,    // isfull = lsb_full | rs_full | rob_full
 
   // signal to icahce
-  output reg rdy_to_fetch,              // ready to fetch an instruction
+  output reg  rdy_to_fetch,              // ready to fetch an instruction
   output reg  [`DATA_IDX_RANGE] pc_2icache,
   input  wire instr_valid,              // whether icache has send instr back
   input  wire [`DATA_IDX_RANGE] instr_from_icache,
 
   // from predictor
-  output wire valid_2pred,
   output wire [`DATA_IDX_RANGE] instr_2pred,
   output wire [`DATA_IDX_RANGE] cur_pc,
   input  wire if_jump,
@@ -39,7 +38,6 @@ reg [1:0] status;
 reg [`DATA_IDX_RANGE] pc;
 
 // to predictor
-assign valid_2pred  = (instr_valid) ? `TRUE : `FALSE;
 assign cur_pc       = pc;
 assign instr_2pred  = instr_from_icache;
 
@@ -47,11 +45,12 @@ always @(posedge clk) begin
   if (rst) begin 
     rdy_to_fetch  <= `FALSE;
     valid_2dsp    <= `FALSE;
-    status      <= `INS_HOLD;
-    pc          <= `ZERO;
-    pc_2icache  <= `ZERO;
-    pc_2dsp     <= `ZERO;
-    instr_2dsp  <= `ZERO;
+    if_jump_2dsp  <= `FALSE;
+    status        <= `INS_HOLD;
+    pc            <= `ZERO;
+    pc_2icache    <= `ZERO;
+    pc_2dsp       <= `ZERO;
+    instr_2dsp    <= `ZERO;
   end 
   else if (~rdy) begin // pause 
   end 
@@ -74,6 +73,7 @@ always @(posedge clk) begin
       if (instr_valid) begin
         status        <= `INS_HOLD;
         rdy_to_fetch  <= `FALSE;
+        pc_2icache    <= `ZERO;
       end
     end
     else if (status == `INS_FETCH && ~is_full) begin
@@ -87,6 +87,7 @@ always @(posedge clk) begin
         instr_2dsp   <= instr_from_icache;
         pc_2dsp      <= pc;
         rdy_to_fetch <= `FALSE;
+        pc_2icache   <= `ZERO;
       end
     end
     else if (status == `INS_HOLD) begin
@@ -106,6 +107,7 @@ always @(posedge clk) begin
       else begin
         // valid_2dsp    <= `FALSE;
         rdy_to_fetch  <= `FALSE;
+        pc_2icache    <= `ZERO;
       end
     end
 
